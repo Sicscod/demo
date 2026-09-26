@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bars — барбершоп в Астане</title>
+<meta name="description" content="Сайт для барбершопа или студии маникюра: услуги, цены, мастера и запись в WhatsApp.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Oswald:wght@500;600;700&family=Prata&display=swap">
+<style>
+/* Theme tokens are set by the preset in CONFIG (see script). */
+:root{
+  --bg:#121212; --surface:#1B1B1B; --ink:#EFE8DC; --muted:#A39B8E; --line:#2E2C29;
+  --accent:#C9A25B; --accent-ink:#141414; --pole1:#B6362B; --pole2:#EFE8DC; --pole3:#27437A;
+  --display:"Oswald","Arial Narrow",sans-serif; --display-case:uppercase; --display-track:.02em;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --radius:14px; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+a{color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:18px}
+h1,h2,h3{font-family:var(--display);text-transform:var(--display-case);letter-spacing:var(--display-track);font-weight:600;line-height:1.05;margin:0;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+.demo{background:var(--accent);color:var(--accent-ink);font-size:13px;font-weight:600;text-align:center;padding:7px 12px;padding-top:calc(7px + env(safe-area-inset-top,0px))}
+.demo a{text-decoration:underline}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;height:60px}
+.brand{font-family:var(--display);text-transform:var(--display-case);letter-spacing:var(--display-track);font-size:20px;font-weight:600;text-decoration:none;white-space:nowrap}
+.top nav{display:flex;gap:6px;align-items:center}
+.lang{font:inherit;font-size:13px;font-weight:600;background:transparent;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:6px 10px;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:600;border-radius:12px;padding:13px 18px;text-decoration:none;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{border-color:var(--line);background:transparent;color:var(--ink)}
+.btn.sm{padding:8px 12px;font-size:14px;border-radius:10px}
+.btn:focus-visible,.lang:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* hero */
+.hero{padding-block:44px 28px;display:grid;gap:22px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.hero h1{font-size:clamp(48px,14vw,120px)}
+.hero p.lead{font-size:18px;color:var(--muted);max-width:34ch;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;border:1px solid var(--line);border-radius:99px;padding:6px 12px;background:var(--surface);text-decoration:none}
+.chip b{color:var(--accent)}
+.cta{display:flex;flex-wrap:wrap;gap:10px}
+.pole{height:14px;border-radius:99px;background:repeating-linear-gradient(-45deg,var(--pole1) 0 14px,var(--pole2) 14px 28px,var(--pole3) 28px 42px,var(--pole2) 42px 56px);background-size:79px 14px;animation:pole 3s linear infinite;opacity:.9}
+@keyframes pole{to{background-position:79px 0}}
+
+section{padding-block:36px;border-top:1px solid var(--line)}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px}
+.sec-head h2{font-size:clamp(30px,7vw,48px)}
+.sec-head span{color:var(--muted);font-size:14px}
+
+/* price list with dotted leaders */
+.prices{display:grid;gap:4px}
+.price{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding-block:12px;border-bottom:1px dashed var(--line)}
+.price .name{display:flex;align-items:baseline;gap:8px;font-weight:600;font-size:17px}
+.price .dur{grid-column:1;color:var(--muted);font-size:14px}
+.price .cost{grid-row:1/span 2;grid-column:2;align-self:center;font-family:var(--display);font-size:22px;color:var(--accent);letter-spacing:.01em}
+
+/* masters */
+.masters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.master{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px}
+.mono{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:24px;background:var(--accent);color:var(--accent-ink)}
+.master h3{font-size:24px}
+.master p{margin:0;color:var(--muted);font-size:15px}
+
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.tile{aspect-ratio:4/5;max-width:100%;border-radius:12px;overflow:hidden;position:relative;background:var(--surface);border:1px solid var(--line)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile .ph{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:12px;gap:2px}
+.tile .ph b{font-family:var(--display);text-transform:var(--display-case);font-size:22px;letter-spacing:var(--display-track);font-weight:600}
+.tile .ph span{font-size:12px;opacity:.75}
+.note{color:var(--muted);font-size:14px;margin-top:10px}
+
+/* booking */
+.book{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:grid;gap:12px}
+.book label{display:grid;gap:6px;font-size:14px;color:var(--muted)}
+.book select,.book input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;width:100%;min-width:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sum{display:flex;justify-content:space-between;align-items:baseline;font-size:15px}
+.sum b{font-family:var(--display);font-size:24px;color:var(--accent)}
+
+/* visit */
+.visit{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:grid;gap:6px;align-content:start}
+.card .k{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.card .v{font-size:18px;font-weight:600}
+.rating{display:flex;align-items:center;gap:14px}
+.rating .big{font-family:var(--display);font-size:56px;line-height:1;color:var(--accent)}
+.stars{letter-spacing:2px;color:var(--accent)}
+
+footer{border-top:1px solid var(--line);padding-block:28px 12px;color:var(--muted);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;gap:10px}
+.dock .btn{flex:1}
+@media (min-width:860px){
+  .hero{grid-template-columns:1.3fr 1fr;align-items:end;padding-block:72px 40px}
+  .hero .side{display:grid;gap:14px}
+  .prices{grid-template-columns:1fr 1fr;column-gap:40px}
+  .book-wrap{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+  .dock{display:none}
+  body{padding-bottom:0}
+}
+</style>
+</head>
+<body>
+<div class="demo" id="demo" hidden></div>
+<header class="top"><div class="wrap">
+  <a class="brand" href="#" id="brand"></a>
+  <nav><button class="lang" id="lang" type="button">ҚАЗ</button><a class="btn primary sm" href="#book" data-t="book">Записаться</a></nav>
+</div></header>
+
+<main>
+  <div class="wrap hero">
+    <div style="display:grid;gap:18px">
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 id="title"></h1>
+      <p class="lead" id="tagline"></p>
+      <div class="cta">
+        <a class="btn primary" id="waHero" href="#" target="_blank" rel="noopener" data-t="bookWa">Записаться в WhatsApp</a>
+        <a class="btn ghost" id="callHero" href="#" data-t="call">Позвонить</a>
+      </div>
+    </div>
+    <div class="side">
+      <div class="chips" id="chips"></div>
+      <div class="pole" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <section id="services"><div class="wrap">
+    <div class="sec-head"><h2 data-t="services">Услуги и цены</h2><span id="currency">₸</span></div>
+    <div class="prices" id="prices"></div>
+  </div></section>
+
+  <section id="masters"><div class="wrap">
+    <div class="sec-head"><h2 data-t="masters">Мастера</h2></div>
+    <div class="masters" id="masterList"></div>
+  </div></section>
+
+  <section id="works"><div class="wrap">
+    <div class="sec-head"><h2 data-t="works">Наши работы</h2><a class="chip" id="igLink" href="#" target="_blank" rel="noopener">Instagram ↗</a></div>
+    <div class="gallery" id="gallery"></div>
+    <p class="note" id="galleryNote"></p>
+  </div></section>
+
+  <section id="book"><div class="wrap book-wrap">
+    <div style="display:grid;gap:10px;align-content:start;margin-bottom:16px">
+      <h2 style="font-size:clamp(30px,7vw,48px)" data-t="bookTitle">Онлайн-запись</h2>
+      <p style="margin:0;color:var(--muted)" data-t="bookText">Выберите услугу, мастера и время. Откроется WhatsApp с готовым сообщением, администратор подтвердит запись.</p>
+    </div>
+    <form class="book" id="bookForm">
+      <label><span data-t="chooseService">Услуга</span><select id="fService"></select></label>
+      <label><span data-t="chooseMaster">Мастер</span><select id="fMaster"></select></label>
+      <div class="row2">
+        <label><span data-t="date">Дата</span><input id="fDate" type="date"></label>
+        <label><span data-t="time">Время</span><select id="fTime"></select></label>
+      </div>
+      <label><span data-t="yourName">Ваше имя</span><input id="fName" type="text" autocomplete="given-name"></label>
+      <div class="sum"><span id="fSumLabel" data-t="total">Стоимость</span><b class="num" id="fSum"></b></div>
+      <button class="btn primary" type="submit" data-t="bookWa">Записаться в WhatsApp</button>
+    </form>
+  </div></section>
+
+  <section id="visit"><div class="wrap">
+    <div class="sec-head"><h2 data-t="visit">Как нас найти</h2></div>
+    <div class="visit">
+      <div class="card"><span class="k" data-t="address">Адрес</span><span class="v" id="address"></span><a class="btn ghost sm" style="justify-self:start;margin-top:8px" id="mapLink" href="#" target="_blank" rel="noopener" data-t="openMap">Открыть в 2GIS</a></div>
+      <div class="card"><span class="k" data-t="hours">Часы работы</span><span class="v num" id="hours"></span><span class="num" id="phoneText" style="color:var(--muted)"></span></div>
+      <div class="card"><span class="k" data-t="reviews">Отзывы в 2GIS</span>
+        <div class="rating"><span class="big num" id="rate"></span><div><div class="stars" aria-hidden="true">★★★★★</div><span class="num" id="rateCount" style="color:var(--muted)"></span></div></div>
+        <a class="btn ghost sm" style="justify-self:start;margin-top:8px" id="reviewsLink" href="#" target="_blank" rel="noopener" data-t="readReviews">Читать отзывы</a>
+      </div>
+    </div>
+  </div></section>
+</main>
+
+<footer><div class="wrap">
+  <span id="copy"></span>
+  <span>Сайт: <a href="https://www.instagram.com/sicscod.drops/" target="_blank" rel="noopener">@sicscod.drops</a></span>
+</div></footer>
+
+<div class="dock">
+  <a class="btn ghost" id="callDock" href="#" data-t="call">Позвонить</a>
+  <a class="btn primary" id="waDock" href="#" target="_blank" rel="noopener" data-t="book">Записаться</a>
+</div>
+
+<script>window.CLIENT={"base": "barber", "demo": true, "name": "Bars", "kind": "Барбершоп", "kindKz": "Барбершоп", "tagline": "Барбершоп в Нуре. Стрижки от 2 000 ₸, 4.9★ и 900+ отзывов в 2GIS. Запись за минуту в WhatsApp.", "taglineKz": "Нұрадағы барбершоп. Шаш қию 2 000 ₸-ден, 2GIS-те 900+ пікір.", "phone": "+77761861256", "instagram": "bars_barbershop", "address": "ул. Илияс Омаров, 19/1", "hours": "Ежедневно 10:00–22:00", "open": "10:00", "close": "22:00", "step": 30, "rating": "4.9", "reviews": 903, "gis": "https://2gis.kz/astana/firm/70000001083231482", "booking": "", "services": [["Мужская стрижка", 2000, null, true], ["Стрижка машинкой", 1500, null, true], ["Стрижка + борода", 3500, null, true], ["Оформление бороды", 1500, null, true], ["Детская стрижка", 1500, null, true], ["Камуфляж седины", 2500, null, true]], "masters": [], "demoText": {"ru": "Демо-сайт для Bars. Цены и фото примерные, заменим на ваши. Сделано", "kz": "Bars үшін демо-сайт. Бағалар мен суреттер үлгі ретінде. Жасаған"}};</script>
+<script>
+/* ================================================================
+   CONFIG — change this block for each client.
+   Open the page with ?t=nails to see the nail-studio preset.
+   ================================================================ */
+const PRESETS = {
+  barber: {
+    demo: true,
+    name: "Blade & Co.",
+    kind: "Барбершоп",
+    kindKz: "Барбершоп",
+    city: "Астана",
+    tagline: "Фейды, классика и борода. Запись за минуту, без звонков и ожидания.",
+    taglineKz: "Фейд, классика және сақал. Бір минутта жазылыңыз.",
+    phone: "+77000000000",           // WhatsApp and calls, digits with country code
+    instagram: "sicscod.drops",      // without @
+    address: "пр. Мангилик Ел, 1",
+    hours: "Ежедневно 10:00–22:00",
+    open: "10:00", close: "22:00", step: 30,
+    rating: "4.9", reviews: 820,
+    gis: "https://2gis.kz/astana",   // link to the 2GIS card
+    booking: "",                     // their alteg.io / dikidi / zapis.kz link; empty = booking via WhatsApp
+    gallery: [],                     // photo URLs; empty = styled placeholders
+    placeholder: ["Fade","Crop","Buzz cut","Борода","Pompadour","Taper"],
+    services: [
+      ["Мужская стрижка", 6000, 45],
+      ["Стрижка + борода", 9000, 75],
+      ["Моделирование бороды", 4000, 30],
+      ["Детская стрижка", 4500, 40],
+      ["Королевское бритьё", 5000, 40],
+      ["Камуфляж седины", 4000, 30]
+    ],
+    masters: [
+      ["Арман", "Топ-барбер · 6 лет", "Фейды и текстурные стрижки"],
+      ["Дамир", "Барбер · 4 года", "Классика, борода, бритьё"],
+      ["Тимур", "Барбер · 2 года", "Детские и молодёжные стрижки"]
+    ],
+    theme: {}
+  },
+  nails: {
+    demo: true,
+    name: "Lumi Nail Studio",
+    kind: "Студия маникюра",
+    kindKz: "Маникюр студиясы",
+    city: "Астана",
+    tagline: "Аккуратный маникюр и педикюр, стерильные инструменты, покрытие держится до 4 недель.",
+    taglineKz: "Ұқыпты маникюр мен педикюр, стерильді құралдар.",
+    phone: "+77000000000",
+    instagram: "sicscod.drops",
+    address: "пр. Кабанбай батыра, 1",
+    hours: "Ежедневно 09:00–21:00",
+    open: "09:00", close: "21:00", step: 30,
+    rating: "4.9", reviews: 460,
+    gis: "https://2gis.kz/astana",
+    gallery: [],
+    placeholder: ["Nude 03","Cherry 12","Milk","French","Chrome","Mocha 21"],
+    services: [
+      ["Маникюр с покрытием", 8000, 90],
+      ["Маникюр без покрытия", 4000, 45],
+      ["Наращивание", 14000, 150],
+      ["Педикюр с покрытием", 10000, 90],
+      ["Снятие покрытия", 1500, 20],
+      ["Дизайн (1 ноготь)", 500, 10]
+    ],
+    masters: [
+      ["Айгерим", "Топ-мастер · 7 лет", "Наращивание и сложный дизайн"],
+      ["Дана", "Мастер · 4 года", "Идеальный френч и нюд"],
+      ["Мадина", "Мастер · 3 года", "Педикюр и уход"]
+    ],
+    theme: {
+      "--bg":"#F7F1EE","--surface":"#FFFFFF","--ink":"#2B1E22","--muted":"#8A7479","--line":"#EADBD6",
+      "--accent":"#B5475E","--accent-ink":"#FFFFFF",
+      "--display":"'Prata',Georgia,serif","--display-case":"none","--display-track":"0",
+      "color-scheme":"light"
+    }
+  }
+};
+const params = new URLSearchParams(location.search);
+const CONFIG = Object.assign({}, PRESETS[(window.CLIENT&&window.CLIENT.base)||params.get("t")] || PRESETS.barber, window.CLIENT||{});
+
+/* ---------------- no need to edit below ---------------- */
+const T = {
+  ru:{book:"Записаться",bookWa:"Записаться в WhatsApp",call:"Позвонить",services:"Услуги и цены",masters:"Мастера",works:"Наши работы",
+      bookTitle:"Онлайн-запись",bookText:"Выберите услугу, мастера и время. Откроется WhatsApp с готовым сообщением, администратор подтвердит запись.",
+      chooseService:"Услуга",chooseMaster:"Мастер",date:"Дата",time:"Время",yourName:"Ваше имя",total:"Стоимость",visit:"Как нас найти",
+      address:"Адрес",hours:"Часы работы",reviews:"Отзывы в 2GIS",openMap:"Открыть в 2GIS",readReviews:"Читать отзывы",anyMaster:"Любой свободный",
+      min:"мин",bookWith:"Записаться к",reviewsN:n=>n+" отзывов",galleryNote:"Здесь будут фото ваших работ из Instagram.",lang:"ҚАЗ",
+      demo:"Демо-версия сайта. Хотите такой для своего бизнеса? Пишите в Instagram"},
+  kz:{book:"Жазылу",bookWa:"WhatsApp арқылы жазылу",call:"Қоңырау шалу",services:"Қызметтер мен бағалар",masters:"Шеберлер",works:"Жұмыстарымыз",
+      bookTitle:"Онлайн жазылу",bookText:"Қызметті, шеберді және уақытты таңдаңыз. WhatsApp дайын хабарламамен ашылады.",
+      chooseService:"Қызмет",chooseMaster:"Шебер",date:"Күні",time:"Уақыты",yourName:"Атыңыз",total:"Бағасы",visit:"Бізді қалай табуға болады",
+      address:"Мекенжай",hours:"Жұмыс уақыты",reviews:"2GIS-тегі пікірлер",openMap:"2GIS-те ашу",readReviews:"Пікірлерді оқу",anyMaster:"Кез келген бос шебер",
+      min:"мин",bookWith:"Жазылу:",reviewsN:n=>n+" пікір",galleryNote:"Мұнда Instagram-дағы жұмыстарыңыздың суреттері болады.",lang:"РУС",
+      demo:"Сайттың демо-нұсқасы. Бизнесіңізге осындай керек пе? Instagram-ға жазыңыз"}
+};
+let lang = "ru";
+const $ = id => document.getElementById(id);
+const money = n => n.toLocaleString("ru-RU").replace(/ |,/g," ") + " ₸";
+const digits = CONFIG.phone.replace(/\D/g,"");
+const wa = text => "https://wa.me/" + digits + (text ? "?text=" + encodeURIComponent(text) : "");
+const prettyPhone = p => { const d=p.replace(/\D/g,""); return d.length===11 ? `+${d[0]} ${d.slice(1,4)} ${d.slice(4,7)} ${d.slice(7,9)} ${d.slice(9)}` : p; };
+
+Object.entries(CONFIG.theme||{}).forEach(([k,v]) => k==="color-scheme" ? document.documentElement.style.colorScheme=v : document.documentElement.style.setProperty(k,v));
+if (CONFIG.theme && CONFIG.theme["--display"]) document.querySelector(".pole").style.display="none";
+
+function render(){
+  const t = T[lang];
+  document.documentElement.lang = lang==="kz" ? "kk" : "ru";
+  document.title = CONFIG.name + " — " + CONFIG.kind.toLowerCase() + " в Астане";
+  document.querySelectorAll("[data-t]").forEach(el => { const v=t[el.dataset.t]; if(typeof v==="string") el.textContent=v; });
+  $("lang").textContent = t.lang;
+  $("demo").hidden = !CONFIG.demo;
+  $("demo").innerHTML = ""; $("demo").append((CONFIG.demoText ? CONFIG.demoText[lang] : t.demo)+" ");
+  const dl=document.createElement("a"); dl.href="https://www.instagram.com/sicscod.drops/"; dl.target="_blank"; dl.rel="noopener"; dl.textContent="@sicscod.drops"; $("demo").append(dl);
+  $("brand").textContent = CONFIG.name;
+  $("eyebrow").textContent = (lang==="kz"?CONFIG.kindKz:CONFIG.kind) + " · " + CONFIG.city;
+  $("title").textContent = CONFIG.name;
+  $("tagline").textContent = lang==="kz" && CONFIG.taglineKz ? CONFIG.taglineKz : CONFIG.tagline;
+  const hello = lang==="kz" ? `Сәлеметсіз бе! ${CONFIG.name}-ге жазылғым келеді.` : `Здравствуйте! Хочу записаться в ${CONFIG.name}.`;
+  const bookHref = CONFIG.booking || wa(hello);
+  ["waHero","waDock"].forEach(id => $(id).href = bookHref);
+  if (CONFIG.booking){
+    $("waHero").textContent = lang==="kz" ? "Онлайн жазылу" : "Записаться онлайн";
+    $("bookForm").hidden = true;
+    let go=$("bookGo"); if(!go){ go=document.createElement("a"); go.id="bookGo"; go.className="btn primary"; go.target="_blank"; go.rel="noopener"; $("bookForm").after(go); }
+    go.href=CONFIG.booking; go.textContent = lang==="kz" ? "Бос уақытты таңдау" : "Выбрать свободное время";
+  }
+  ["callHero","callDock"].forEach(id => $(id).href = "tel:+" + digits);
+
+  const chips = $("chips"); chips.textContent="";
+  const c1=document.createElement("a"); c1.className="chip"; c1.href=CONFIG.gis; c1.target="_blank"; c1.rel="noopener"; c1.innerHTML=`<b>★ ${CONFIG.rating}</b>`; c1.append(" · 2GIS · "+t.reviewsN(CONFIG.reviews)); chips.append(c1);
+  const c2=document.createElement("span"); c2.className="chip"; c2.textContent=CONFIG.address; chips.append(c2);
+  const c3=document.createElement("span"); c3.className="chip num"; c3.textContent=CONFIG.hours; chips.append(c3);
+
+  const pr=$("prices"); pr.textContent="";
+  CONFIG.services.forEach(([n,p,m,from]) => {
+    const r=document.createElement("div"); r.className="price";
+    const a=document.createElement("div"); a.className="name"; a.textContent=n;
+    const d=document.createElement("div"); d.className="dur num"; d.textContent=m? m+" "+t.min : "";
+    const c=document.createElement("div"); c.className="cost num"; c.textContent=(from?(lang==="kz"?"":"от "):"")+money(p)+(from&&lang==="kz"?"-ден":"");
+    r.append(a,c,d); pr.append(r);
+  });
+
+  const ml=$("masterList"); ml.textContent="";
+  $("masters").hidden = !CONFIG.masters.length;
+  CONFIG.masters.forEach(([n,role,about]) => {
+    const card=document.createElement("div"); card.className="master";
+    const mono=document.createElement("div"); mono.className="mono"; mono.textContent=n[0];
+    const h=document.createElement("h3"); h.textContent=n;
+    const r=document.createElement("p"); r.textContent=role;
+    const a=document.createElement("p"); a.textContent=about;
+    const b=document.createElement("a"); b.className="btn ghost sm"; b.style.justifySelf="start"; b.href=CONFIG.booking||"#book"; if(CONFIG.booking){b.target="_blank";b.rel="noopener";} b.textContent=t.book;
+    b.onclick=()=>{ $("fMaster").value=n; updateSum(); };
+    card.append(mono,h,r,a,b); ml.append(card);
+  });
+
+  $("igLink").href = "https://www.instagram.com/" + CONFIG.instagram + "/";
+  $("igLink").textContent = "@" + CONFIG.instagram + " ↗";
+  const g=$("gallery"); g.textContent="";
+  if (CONFIG.gallery.length){
+    CONFIG.gallery.forEach(src => { const tile=document.createElement("div"); tile.className="tile"; const img=document.createElement("img"); img.src=src; img.alt=""; img.loading="lazy"; tile.append(img); g.append(tile); });
+    $("galleryNote").textContent="";
+  } else {
+    CONFIG.placeholder.forEach((label,i) => {
+      const tile=document.createElement("div"); tile.className="tile";
+      const NAIL=["#E9C3B0,#C99582","#D65A6E,#8E2238","#F4EDE6,#DCCFC4","#F6D9DC,#E7AEB6","#E1E3E8,#9DA3AE","#A57A63,#6B4A3A"]; const hue = CONFIG.theme && CONFIG.theme["--display"] ? NAIL[i%6] : null;
+      tile.style.background = hue===null
+        ? `radial-gradient(120% 80% at ${20+i*13}% 10%, color-mix(in srgb,var(--accent) ${18+i*4}%,transparent), transparent 60%), linear-gradient(160deg,#232120,#151414)`
+        : `radial-gradient(90% 70% at 30% 20%, ${hue.split(",")[0]}, ${hue.split(",")[1]})`;
+      const ph=document.createElement("div"); ph.className="ph";
+      const b=document.createElement("b"); b.textContent=label;
+      const s=document.createElement("span"); s.textContent="№ "+String(i+1).padStart(2,"0");
+      if(hue!==null){ ph.style.color=[1,5].includes(i%6)?"#FFF":"#2B1E22"; }
+      ph.append(b,s); tile.append(ph); g.append(tile);
+    });
+    $("galleryNote").textContent=t.galleryNote;
+  }
+
+  $("address").textContent=CONFIG.address; $("mapLink").href=CONFIG.gis; $("reviewsLink").href=CONFIG.gis;
+  $("hours").textContent=CONFIG.hours; $("phoneText").textContent=prettyPhone(CONFIG.phone);
+  $("rate").textContent=CONFIG.rating; $("rateCount").textContent=t.reviewsN(CONFIG.reviews);
+  $("copy").textContent="© "+new Date().getFullYear()+" "+CONFIG.name;
+
+  fillForm();
+}
+
+function fillForm(){
+  const t=T[lang], s=$("fService"), m=$("fMaster"), keepS=s.value, keepM=m.value;
+  s.textContent=""; CONFIG.services.forEach(([n,p,d],i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=`${n} · ${money(p)}`; s.append(o); });
+  m.textContent=""; [[t.anyMaster]].concat(CONFIG.masters).forEach(([n],i)=>{ const o=document.createElement("option"); o.value=i?n:""; o.textContent=n; m.append(o); });
+  m.closest("label").hidden = !CONFIG.masters.length;
+  if(keepS) s.value=keepS; if(keepM!==undefined) m.value=keepM;
+  const f=$("fTime"), keepT=f.value; f.textContent="";
+  const [oh,om]=CONFIG.open.split(":").map(Number), [ch,cm]=CONFIG.close.split(":").map(Number);
+  for(let x=oh*60+om; x<=ch*60+cm-30; x+=CONFIG.step){ const o=document.createElement("option"); o.textContent=String(Math.floor(x/60)).padStart(2,"0")+":"+String(x%60).padStart(2,"0"); f.append(o); }
+  if(keepT) f.value=keepT;
+  const d=$("fDate"); if(!d.value){ const n=new Date(); d.value=n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0"); d.min=d.value; }
+  updateSum();
+}
+function updateSum(){ const sv=CONFIG.services[$("fService").value||0]; $("fSum").textContent=money(sv[1]); }
+$("fService").addEventListener("change",updateSum);
+$("bookForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const sv=CONFIG.services[$("fService").value||0], master=$("fMaster").value, name=$("fName").value.trim();
+  const [y,mo,da]=$("fDate").value.split("-"); const date=`${da}.${mo}`;
+  const msg = lang==="kz"
+    ? `Сәлеметсіз бе! ${CONFIG.name}-ге жазылғым келеді.\nҚызмет: ${sv[0]}\n${master?"Шебер: "+master+"\n":""}Күні: ${date}, ${$("fTime").value}${name?"\nАтым: "+name:""}`
+    : `Здравствуйте! Хочу записаться в ${CONFIG.name}.\nУслуга: ${sv[0]}\n${master?"Мастер: "+master+"\n":""}Дата: ${date}, ${$("fTime").value}${name?"\nМеня зовут "+name:""}`;
+  window.open(wa(msg),"_blank","noopener");
+});
+$("lang").addEventListener("click",()=>{ lang = lang==="ru" ? "kz" : "ru"; render(); });
+render();
+</script>
+</body>
+</html>
