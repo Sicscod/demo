@@ -150,6 +150,8 @@ button{cursor:pointer}
 .tabbar button[aria-current="page"]{color:var(--sky)}
 .tabbar .badge{position:absolute;top:0;left:calc(50% + 6px);background:var(--bad);color:#fff;font-size:11px;border-radius:99px;padding:1px 6px;font-variant-numeric:tabular-nums}
 .foot{display:grid;gap:10px}
+.install{display:grid;gap:10px;border:2px dashed var(--sky)}
+.steps{margin:0;padding-left:20px;display:grid;gap:4px;font-weight:600}
 .small-link{border:0;background:none;color:var(--sky);font-weight:800;padding:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @keyframes pop{from{transform:scale(.97);opacity:.6}to{transform:none;opacity:1}}
@@ -225,11 +227,29 @@ function render(){
   const bd=$("#dueBadge");bd.hidden=!due;bd.textContent=due>99?"99+":due;
   $("#streakN").textContent=streak();
   const m=$("#main");
-  if(ui.tab==="home")m.innerHTML=homeView();
+  if(ui.tab==="home")m.innerHTML=installCard()+homeView();
   if(ui.tab==="add")m.innerHTML=addView();
   if(ui.tab==="review")m.innerHTML=reviewView();
   if(ui.tab==="words")m.innerHTML=wordsView();
 }
+
+/* ---------- install hint (iPhone: Safari share sheet; Android: Chrome prompt) ---------- */
+let installEvt=null;
+const STANDALONE=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+let IN_FRAME=false;try{IN_FRAME=window.top!==window}catch(e){IN_FRAME=true}
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const ANDROID=/Android/i.test(navigator.userAgent);
+function hideInstall(){try{return localStorage.getItem(KEY+"-noinstall")==="1"}catch(e){return false}}
+function installCard(){
+  if(STANDALONE||IN_FRAME||hideInstall()||!(IOS||ANDROID||installEvt))return "";
+  const body=installEvt?`<button class="btn" data-install>Установить</button>`
+    :IOS?`<ol class="steps"><li>Открой эту страницу в <b>Safari</b></li><li>Нажми «Поделиться» (квадрат со стрелкой)</li><li>Выбери «На экран „Домой“»</li></ol>`
+    :`<ol class="steps"><li>Открой эту страницу в <b>Chrome</b></li><li>Нажми ⋮ вверху справа</li><li>Выбери «Установить приложение» или «Добавить на главный экран»</li></ol>`;
+  return `<section class="card install"><div class="sec-title"><h3>Поставь Сөздік на экран телефона</h3><button class="small-link" data-noinstall>Скрыть</button></div>
+    <p class="hint">Будет открываться как обычное приложение, даже без интернета.</p>${body}</section>`;
+}
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e;if(ui.tab==="home")render()});
+window.addEventListener("appinstalled",()=>{installEvt=null;render()});
 
 function homeView(){
   const W=state.words, known=W.filter(w=>status(w)==="known");
@@ -446,6 +466,8 @@ document.addEventListener("click",e=>{
   if(d.stop!==undefined||d.finish!==undefined){ui.session=null;ui.tab=d.finish!==undefined?"home":"review";render();return}
   if(d.edit){editSheet(d.edit);return}
   if(d.backup!==undefined){backupSheet();return}
+  if(d.install!==undefined&&installEvt){installEvt.prompt();installEvt.userChoice.finally(()=>{installEvt=null;render()});return}
+  if(d.noinstall!==undefined){try{localStorage.setItem(KEY+"-noinstall","1")}catch(e){}render();return}
   if(d.del){
     if(t.dataset.armed){state.words=state.words.filter(w=>w.id!==d.del);save();closeSheet();render();return}
     t.dataset.armed="1";t.textContent="Точно удалить?";return}
