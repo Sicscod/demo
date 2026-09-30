@@ -1,0 +1,484 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Сөздік">
+<meta name="theme-color" content="#EEF4F7" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0D1B27" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}</style>
+<title>Сөздік Тимы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one-column phone app, stats card on top, fixed bottom tab bar; flashcard is an index card */
+:root{
+  --bg:#EEF4F7; --surface:#FFFFFF; --ink:#12263A; --muted:#5B6F80; --line:#D6E2EA;
+  --sky:#0098B8; --sky-soft:#D8F0F5; --gold:#E0A100; --gold-soft:#FBEFCB;
+  --good:#1F9D6A; --good-soft:#D9F2E7; --bad:#D2493D; --bad-soft:#FBE1DE;
+  --en:#3B5BDB; --en-soft:#E3E8FC; --kk:#0098B8; --kk-soft:#D8F0F5;
+  --shadow:0 1px 2px rgba(18,38,58,.06),0 6px 20px rgba(18,38,58,.07); --hero:#12263A; --on-hero:#F4F8FB;
+  --display:"Unbounded","Nunito",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D1B27; --surface:#15283A; --ink:#E8F1F6; --muted:#93A8B8; --line:#24394D;
+  --sky:#35C3DF; --sky-soft:#113846; --gold:#F2BB2E; --gold-soft:#3A3014;
+  --good:#46C48F; --good-soft:#123A2B; --bad:#F07166; --bad-soft:#40201D;
+  --en:#8EA4FF; --en-soft:#1E2A55; --kk:#35C3DF; --kk-soft:#113846;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); --hero:#1C3852; --on-hero:#F4F8FB; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1B27; --surface:#15283A; --ink:#E8F1F6; --muted:#93A8B8; --line:#24394D;
+  --sky:#35C3DF; --sky-soft:#113846; --gold:#F2BB2E; --gold-soft:#3A3014;
+  --good:#46C48F; --good-soft:#123A2B; --bad:#F07166; --bad-soft:#40201D;
+  --en:#8EA4FF; --en-soft:#1E2A55; --kk:#35C3DF; --kk-soft:#113846;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); --hero:#1C3852; --on-hero:#F4F8FB; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.app{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:14px calc(96px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:6px 14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:36px;height:36px;flex:none}
+.brand h1{font-size:19px}
+.brand small{display:block;color:var(--muted);font-size:12.5px;font-family:var(--body);font-weight:600;letter-spacing:0}
+.streak{display:flex;align-items:center;gap:6px;background:var(--gold-soft);color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+.streak svg{width:16px;height:16px;fill:var(--gold)}
+.view{display:grid;gap:14px}
+.card{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:18px}
+.hero{background:var(--hero);color:var(--on-hero);border-radius:22px;padding:20px;display:grid;gap:14px;position:relative;overflow:hidden}
+.hero .ornament{position:absolute;right:-40px;top:-40px;width:170px;height:170px;opacity:.16;pointer-events:none}
+.hero .label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.75}
+.hero .big{font-family:var(--display);font-size:56px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+.hero .big span{font-size:18px;font-weight:500;margin-left:6px;font-family:var(--body)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split div{background:rgba(255,255,255,.08);border-radius:14px;padding:10px 12px}
+.split b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums;display:block}
+.split small{font-size:13px;opacity:.8}
+.progress{height:8px;border-radius:99px;background:rgba(255,255,255,.16);overflow:hidden}
+.progress i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .4s}
+.due{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.due h2{font-size:17px}
+.due p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.btn{border:0;border-radius:14px;padding:13px 18px;font-weight:800;background:var(--sky);color:#fff;white-space:nowrap}
+.btn:disabled{opacity:.45}
+.btn.ghost{background:var(--sky-soft);color:var(--ink)}
+.btn.block{width:100%}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}
+.stats3 b{font-family:var(--display);font-size:22px;display:block;font-variant-numeric:tabular-nums}
+.stats3 small{color:var(--muted);font-size:12.5px;font-weight:700}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:92px;margin-top:10px}
+.week div{display:grid;gap:4px;justify-items:center;align-self:end}
+.week i{display:block;width:100%;max-width:28px;border-radius:7px 7px 3px 3px;background:var(--sky);min-height:4px}
+.week i.zero{background:var(--line)}
+.week small{font-size:11.5px;color:var(--muted);font-weight:700}
+.sec-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec-title h3{font-size:15px}
+.sec-title small{color:var(--muted);font-size:13px}
+/* segmented */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg button{border:0;background:transparent;border-radius:10px;padding:9px 6px;font-weight:800;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+/* form */
+.field{display:grid;gap:6px}
+.field label{font-weight:800;font-size:14px}
+.field input,.field textarea{width:100%;border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;font-size:17px;outline:none}
+.field input:focus,.field textarea:focus{border-color:var(--sky)}
+.field textarea{min-height:64px;resize:vertical;font-size:16px}
+.letters{display:flex;flex-wrap:wrap;gap:6px}
+.letters button{border:0;background:var(--kk-soft);border-radius:10px;min-width:40px;padding:8px 10px;font-weight:800;font-size:17px}
+.hint{color:var(--muted);font-size:13.5px;margin:0}
+.msg{border-radius:12px;padding:10px 12px;font-weight:700;font-size:14px}
+.msg.ok{background:var(--good-soft);color:var(--good)}
+.msg.err{background:var(--bad-soft);color:var(--bad)}
+/* tags */
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;border-radius:6px;padding:2px 6px;text-transform:uppercase}
+.tag.en{background:var(--en-soft);color:var(--en)}
+.tag.kk{background:var(--kk-soft);color:var(--kk)}
+.st{font-size:12px;font-weight:800;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.st.new{background:var(--line);color:var(--muted)}
+.st.learn{background:var(--gold-soft);color:var(--ink)}
+.st.known{background:var(--good-soft);color:var(--good)}
+/* flashcard */
+.fc-wrap{display:grid;gap:14px}
+.fc-top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-weight:700;font-size:14px}
+.fc{background:var(--surface);border-radius:22px;box-shadow:var(--shadow);min-height:300px;display:grid;grid-template-rows:auto 1fr auto;padding:18px;position:relative;
+  background-image:repeating-linear-gradient(to bottom,transparent 0 35px,var(--line) 35px 36px);background-position:0 60px;background-size:100% calc(100% - 60px);background-repeat:no-repeat}
+.fc::before{content:"";position:absolute;left:0;right:0;top:56px;height:2px;background:var(--bad);opacity:.35}
+.fc-head{display:flex;justify-content:space-between;align-items:center;height:28px}
+.fc-dir{color:var(--muted);font-size:13px;font-weight:700}
+.fc-body{display:grid;align-content:center;justify-items:center;text-align:center;gap:10px;padding-block:20px;min-width:0}
+.fc-word{font-family:var(--display);font-size:clamp(28px,8vw,40px);font-weight:700;overflow-wrap:anywhere;background:var(--surface);padding:0 6px;border-radius:8px}
+.fc-ans{font-size:22px;font-weight:800;color:var(--sky);overflow-wrap:anywhere;background:var(--surface);padding:0 6px;border-radius:8px}
+.fc-ex{color:var(--muted);font-size:15px;font-style:italic;max-width:32ch;background:var(--surface);padding:0 6px;border-radius:8px}
+.fc-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn.bad{background:var(--bad-soft);color:var(--bad)}
+.btn.good{background:var(--good);color:#fff}
+.speak{border:0;background:var(--sky-soft);border-radius:99px;width:38px;height:38px;display:grid;place-items:center}
+.speak svg{width:18px;height:18px;fill:var(--ink)}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--sky);transition:width .3s}
+.done{text-align:center;display:grid;gap:10px;justify-items:center;padding-block:26px}
+.done .big{font-family:var(--display);font-size:44px;color:var(--good)}
+/* list */
+.search{width:100%;border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:11px 14px;font-size:16px;outline:none}
+.search:focus{border-color:var(--sky)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:2px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-weight:800;font-size:13.5px;color:var(--muted)}
+.chips button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.list{display:grid;gap:8px}
+.item{background:var(--surface);border-radius:14px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;border:0;text-align:left;box-shadow:0 1px 2px rgba(18,38,58,.05);width:100%}
+.item .w{font-weight:800;font-size:17px;min-width:0;overflow-wrap:anywhere;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.item .t{color:var(--muted);font-size:14.5px;grid-column:1;min-width:0;overflow-wrap:anywhere}
+.item .st{grid-row:1 / span 2;grid-column:2}
+.empty{text-align:center;color:var(--muted);padding:28px 12px;display:grid;gap:10px;justify-items:center}
+.empty svg{width:64px;height:64px}
+.empty b{color:var(--ink);font-family:var(--display);font-size:16px}
+/* sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(10,20,30,.45);z-index:30;display:grid;align-items:end;justify-items:center}
+.sheet{background:var(--bg);width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:12px;max-height:88vh;overflow:auto}
+.sheet h3{font-size:17px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1}
+/* tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.tabbar nav{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{border:0;background:none;display:grid;justify-items:center;gap:2px;padding:6px 2px;color:var(--muted);font-weight:800;font-size:11.5px;position:relative}
+.tabbar svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--sky)}
+.tabbar .badge{position:absolute;top:0;left:calc(50% + 6px);background:var(--bad);color:#fff;font-size:11px;border-radius:99px;padding:1px 6px;font-variant-numeric:tabular-nums}
+.foot{display:grid;gap:10px}
+.small-link{border:0;background:none;color:var(--sky);font-weight:800;padding:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@keyframes pop{from{transform:scale(.97);opacity:.6}to{transform:none;opacity:1}}
+.fc.anim{animation:pop .18s ease-out}
+</style>
+</head><body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#12263A"/><circle cx="32" cy="30" r="11" fill="#E0A100"/><g stroke="#E0A100" stroke-width="3" stroke-linecap="round"><path d="M32 12v-4M32 52v-4M14 30h-4M54 30h-4M19 17l-3-3M45 17l3-3M19 43l-3 3M45 43l3 3"/></g><path d="M14 54c6-4 12-4 18 0s12 4 18 0" stroke="#0098B8" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+      <div><h1>Сөздік</h1><small>слова Тимы · English + Қазақша</small></div>
+    </div>
+    <div class="streak" id="streak" title="Дней подряд с повторением"><svg viewBox="0 0 24 24"><path d="M13.5 2s1 3.5-1.5 6.5S8 12 8 15a4 4 0 0 0 8 0c0-1.5-.6-2.7-1.3-3.6C17 12.6 19 15 19 17.5 19 21 16 23 12 23s-7-2.5-7-6.5C5 10 13.5 7 13.5 2z"/></svg><span id="streakN">0</span></div>
+  </header>
+
+  <main id="main" class="view"></main>
+</div>
+
+<div class="tabbar"><nav aria-label="Разделы">
+  <button data-tab="home" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Главная</button>
+  <button data-tab="add"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Добавить</button>
+  <button data-tab="review"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/></svg>Повторить<span class="badge" id="dueBadge" hidden></span></button>
+  <button data-tab="words"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg>Слова</button>
+</nav></div>
+
+<div id="sheetRoot"></div>
+
+<script>
+(function(){
+"use strict";
+const KEY="tima-words-v1";
+const DAY=86400000;
+// Leitner-style intervals in days for box 1..7; box 0 = new word
+const INTERVALS=[0,1,2,4,7,15,30,60];
+const KNOWN_BOX=4; // answered right 4 times in a row across ~1 week
+const KK_LETTERS=["ә","ғ","қ","ң","ө","ұ","ү","һ","і"];
+const LANG={en:{short:"EN",name:"Английский"},kk:{short:"ҚАЗ",name:"Казахский"}};
+
+let state=load();
+let ui={tab:"home",addLang:state.lastLang||"en",reviewLang:"all",filterLang:"all",filterSt:"all",q:"",session:null};
+
+function blank(){return {words:[],log:{},lastLang:"en"}}
+function load(){
+  try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&Array.isArray(s.words))return Object.assign(blank(),s);}catch(e){}
+  return blank();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s||"").trim().toLowerCase().replace(/\s+/g," ");
+function dayStart(t=Date.now()){const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()}
+function dkey(t=Date.now()){const d=new Date(t);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function status(w){return w.box>=KNOWN_BOX?"known":w.box>0?"learn":"new"}
+const ST_NAME={new:"Новое",learn:"Учу",known:"Знаю"};
+function isDue(w){return w.due<=Date.now()}
+function plural(n,a,b,c){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return c;if(n1>1&&n1<5)return b;if(n1===1)return a;return c}
+function words(n){return plural(n,"слово","слова","слов")}
+
+function streak(){
+  let n=0,t=Date.now();
+  if(!state.log[dkey(t)])t-=DAY; // today not done yet keeps yesterday's streak alive
+  while(state.log[dkey(t)]){n++;t-=DAY}
+  return n;
+}
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll(".tabbar button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===ui.tab?"page":"false"));
+  const due=state.words.filter(isDue).length;
+  const bd=$("#dueBadge");bd.hidden=!due;bd.textContent=due>99?"99+":due;
+  $("#streakN").textContent=streak();
+  const m=$("#main");
+  if(ui.tab==="home")m.innerHTML=homeView();
+  if(ui.tab==="add")m.innerHTML=addView();
+  if(ui.tab==="review")m.innerHTML=reviewView();
+  if(ui.tab==="words")m.innerHTML=wordsView();
+}
+
+function homeView(){
+  const W=state.words, known=W.filter(w=>status(w)==="known");
+  const by=l=>({all:W.filter(w=>w.lang===l).length,known:known.filter(w=>w.lang===l).length});
+  const en=by("en"),kk=by("kk");
+  const due=W.filter(isDue).length;
+  const learn=W.filter(w=>status(w)==="learn").length, fresh=W.filter(w=>status(w)==="new").length;
+  const pct=W.length?Math.round(known.length/W.length*100):0;
+  const days=[];for(let i=6;i>=0;i--){const t=Date.now()-i*DAY;days.push({n:state.log[dkey(t)]||0,l:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"][new Date(t).getDay()]})}
+  const max=Math.max(5,...days.map(d=>d.n));
+  if(!W.length){
+    return `<section class="hero"><svg class="ornament" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="22" fill="#E0A100"/><g stroke="#E0A100" stroke-width="5" stroke-linecap="round"><path d="M50 8v12M50 80v12M8 50h12M80 50h12M20 20l8 8M72 72l8 8M20 80l8-8M72 28l8-8"/></g></svg>
+      <div class="label">Я знаю</div><div class="big">0<span>слов</span></div>
+      <p style="margin:0;opacity:.85">Записывай сюда слова, которые проходишь в школе. Приложение само напомнит их повторить, а когда вспомнишь слово несколько раз подряд, оно попадёт в «Знаю».</p></section>
+      <section class="card empty"><svg viewBox="0 0 64 64"><rect x="10" y="8" width="44" height="50" rx="6" fill="var(--sky-soft)"/><path d="M20 22h24M20 32h24M20 42h14" stroke="var(--sky)" stroke-width="4" stroke-linecap="round"/></svg>
+      <b>Добавь первое слово</b><span>Например: apple, яблоко или алма, яблоко</span>
+      <button class="btn" data-go="add">Добавить слово</button></section>`;
+  }
+  return `<section class="hero"><svg class="ornament" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="22" fill="#E0A100"/><g stroke="#E0A100" stroke-width="5" stroke-linecap="round"><path d="M50 8v12M50 80v12M8 50h12M80 50h12M20 20l8 8M72 72l8 8M20 80l8-8M72 28l8-8"/></g></svg>
+    <div class="label">Я знаю</div>
+    <div class="big">${known.length}<span>${words(known.length)} из ${W.length}</span></div>
+    <div class="progress" aria-label="Выучено ${pct}%"><i style="width:${pct}%"></i></div>
+    <div class="split">
+      <div><small>${LANG.en.name}</small><b>${en.known} <small>/ ${en.all}</small></b></div>
+      <div><small>${LANG.kk.name}</small><b>${kk.known} <small>/ ${kk.all}</small></b></div>
+    </div></section>
+  <section class="card due"><div><h2>${due?`Пора повторить ${due} ${words(due)}`:"На сегодня всё повторено"}</h2>
+    <p>${due?"Занимает пару минут":"Новые слова для повторения появятся завтра"}</p></div>
+    <button class="btn" data-go="review" ${due?"":"data-practice"}>${due?"Начать":"Ещё раз"}</button></section>
+  <section class="card"><div class="stats3">
+    <div><b style="color:var(--muted)">${fresh}</b><small>Новые</small></div>
+    <div><b style="color:var(--gold)">${learn}</b><small>Учу</small></div>
+    <div><b style="color:var(--good)">${known.length}</b><small>Знаю</small></div></div></section>
+  <section class="card"><div class="sec-title"><h3>Повторения за неделю</h3><small>${days.reduce((a,d)=>a+d.n,0)} ответов</small></div>
+    <div class="week">${days.map(d=>`<div><i class="${d.n?"":"zero"}" style="height:${Math.max(4,Math.round(d.n/max*64))}px" title="${d.n}"></i><small>${d.l}</small></div>`).join("")}</div></section>
+  <section class="foot"><button class="btn ghost block" data-backup>Резервная копия слов</button></section>`;
+}
+
+function langSeg(name,val,withAll){
+  const opts=(withAll?[["all","Все"]]:[]).concat([["en","English"],["kk","Қазақша"]]);
+  return `<div class="seg" role="group">${opts.map(([v,l])=>`<button data-seg="${name}" data-val="${v}" aria-pressed="${val===v}">${l}</button>`).join("")}</div>`;
+}
+
+function addView(){
+  const l=ui.addLang;
+  return `<section class="card" style="display:grid;gap:14px">
+    <h2 style="font-size:19px">Новое слово</h2>
+    ${langSeg("addLang",l,false)}
+    <form id="addForm" style="display:grid;gap:14px" autocomplete="off">
+      <div class="field"><label for="fWord">${l==="en"?"Слово на английском":"Слово на казахском"}</label>
+        <input id="fWord" name="word" required autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${l==="en"?"apple":"алма"}" lang="${l}">
+        ${l==="kk"?`<div class="letters" aria-label="Казахские буквы">${KK_LETTERS.map(c=>`<button type="button" data-ins="${c}">${c}</button>`).join("")}</div>`:""}
+      </div>
+      <div class="field"><label for="fTr">Перевод на русский</label>
+        <input id="fTr" name="tr" required placeholder="яблоко" lang="ru"></div>
+      <div class="field"><label for="fEx">Пример или подсказка <span style="color:var(--muted);font-weight:600">(можно пропустить)</span></label>
+        <textarea id="fEx" name="ex" placeholder="${l==="en"?"I eat an apple every day.":"Мен алма жеймін."}"></textarea></div>
+      <div id="addMsg"></div>
+      <button class="btn block" type="submit">Сохранить слово</button>
+    </form>
+    <p class="hint">Новое слово сразу попадёт в «Повторить». Каждый раз, когда вспомнишь его, следующий повтор будет позже: через 1, 2, 4 и 7 дней. После четырёх правильных ответов подряд слово считается выученным.</p>
+  </section>`;
+}
+
+function reviewView(){
+  const s=ui.session;
+  if(!s){
+    const pool=state.words.filter(w=>ui.reviewLang==="all"||w.lang===ui.reviewLang);
+    const due=pool.filter(isDue).length;
+    if(!state.words.length)return `<section class="card empty"><b>Пока нечего повторять</b><span>Сначала добавь слова, которые проходишь.</span><button class="btn" data-go="add">Добавить слово</button></section>`;
+    return `<section class="card" style="display:grid;gap:14px">
+      <h2 style="font-size:19px">Повторение</h2>
+      ${langSeg("reviewLang",ui.reviewLang,true)}
+      <p style="margin:0">${due?`Ждут повторения: <b>${due} ${words(due)}</b>.`:`Все слова${ui.reviewLang==="all"?"":" этого языка"} на сегодня повторены. Можно потренироваться ещё раз, расписание от этого не сдвинется.`}</p>
+      <button class="btn block" data-start="${due?"due":"practice"}" ${pool.length?"":"disabled"}>${due?"Начать повторение":"Потренироваться"}</button>
+      <p class="hint">Посмотри на слово, вспомни перевод и нажми «Показать». Потом честно отметь, вспомнил или нет.</p>
+    </section>`;
+  }
+  if(s.i>=s.queue.length){
+    return `<section class="card done"><div class="big">${s.right}/${s.total}</div>
+      <h2 style="font-size:19px">${s.right===s.total?"Отлично, всё правильно!":"Готово!"}</h2>
+      <p style="margin:0;color:var(--muted)">${s.practice?"Тренировка закончена.":"Слова, которые не вспомнил, вернутся завтра."}</p>
+      <button class="btn" data-finish>К результатам</button></section>`;
+  }
+  const w=state.words.find(x=>x.id===s.queue[s.i].id);
+  if(!w){s.i++;return reviewView();}
+  const rev=s.queue[s.i].rev; // true: show Russian, ask foreign word
+  const front=rev?w.tr:w.word, back=rev?w.word:w.tr;
+  const pct=Math.round(s.i/s.queue.length*100);
+  return `<section class="fc-wrap">
+    <div class="fc-top"><span>${s.i+1} из ${s.queue.length}</span><button class="small-link" data-stop>Закончить</button></div>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <article class="fc anim" aria-live="polite">
+      <div class="fc-head"><span class="tag ${w.lang}">${LANG[w.lang].short}</span><span class="fc-dir">${rev?"Как это будет на "+(w.lang==="en"?"английском":"казахском")+"?":"Что это значит?"}</span></div>
+      <div class="fc-body">
+        <div class="fc-word" lang="${rev?"ru":w.lang}">${esc(front)}</div>
+        ${s.shown?`<div class="fc-ans" lang="${rev?w.lang:"ru"}">${esc(back)}</div>${w.ex?`<div class="fc-ex">${esc(w.ex)}</div>`:""}`:""}
+        ${(s.shown||!rev)&&"speechSynthesis" in window?`<button class="speak" data-speak aria-label="Произнести"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 9h4l5-4v14l-5-4H4z"/></svg></button>`:""}
+      </div>
+      <div></div>
+    </article>
+    ${s.shown?`<div class="fc-actions"><button class="btn bad" data-ans="0">Не вспомнил</button><button class="btn good" data-ans="1">Вспомнил</button></div>`
+      :`<button class="btn block" data-show>Показать ответ</button>`}
+  </section>`;
+}
+
+function wordsView(){
+  const q=norm(ui.q);
+  let list=state.words.filter(w=>(ui.filterLang==="all"||w.lang===ui.filterLang)&&(ui.filterSt==="all"||status(w)===ui.filterSt)&&(!q||norm(w.word).includes(q)||norm(w.tr).includes(q)));
+  list.sort((a,b)=>b.created-a.created);
+  const chip=(v,l)=>`<button data-fst="${v}" aria-pressed="${ui.filterSt===v}">${l}</button>`;
+  return `<section style="display:grid;gap:10px">
+    <div class="sec-title"><h2 style="font-size:19px">Мои слова</h2><small>${state.words.length} ${words(state.words.length)}</small></div>
+    <input class="search" id="q" type="search" placeholder="Найти слово" value="${esc(ui.q)}" autocomplete="off">
+    ${langSeg("filterLang",ui.filterLang,true)}
+    <div class="chips">${chip("all","Все")}${chip("new","Новые")}${chip("learn","Учу")}${chip("known","Знаю")}</div>
+  </section>
+  <section class="list" id="list">${list.length?list.map(w=>`<button class="item" data-edit="${w.id}">
+      <span class="w"><span class="tag ${w.lang}">${LANG[w.lang].short}</span>${esc(w.word)}</span>
+      <span class="t">${esc(w.tr)}</span><span class="st ${status(w)}">${ST_NAME[status(w)]}</span></button>`).join("")
+    :`<div class="empty"><b>${state.words.length?"Ничего не нашлось":"Слов пока нет"}</b><span>${state.words.length?"Попробуй другой фильтр.":"Добавь первое слово во вкладке «Добавить»."}</span></div>`}</section>`;
+}
+
+/* ---------- actions ---------- */
+function addWord(f){
+  const word=f.word.value.trim(),tr=f.tr.value.trim(),ex=f.ex.value.trim(),lang=ui.addLang;
+  const msg=$("#addMsg");
+  if(!word||!tr){msg.innerHTML=`<div class="msg err">Заполни слово и перевод.</div>`;return}
+  const dup=state.words.find(w=>w.lang===lang&&norm(w.word)===norm(word));
+  if(dup){msg.innerHTML=`<div class="msg err">«${esc(dup.word)}» уже есть в словаре: ${esc(dup.tr)}.</div>`;return}
+  state.words.push({id:uid(),lang,word,tr,ex,box:0,due:Date.now(),created:Date.now(),right:0,wrong:0});
+  state.lastLang=lang;save();
+  f.reset();msg.innerHTML=`<div class="msg ok">Сохранено: ${esc(word)} — ${esc(tr)}. Всего ${state.words.length} ${words(state.words.length)}.</div>`;
+  f.word.focus();
+  const bd=$("#dueBadge"),due=state.words.filter(isDue).length;bd.hidden=!due;bd.textContent=due;
+}
+
+function startSession(practice){
+  let pool=state.words.filter(w=>ui.reviewLang==="all"||w.lang===ui.reviewLang);
+  if(!practice)pool=pool.filter(isDue).sort((a,b)=>a.box-b.box||a.due-b.due).slice(0,25);
+  else pool=shuffle(pool.slice()).slice(0,15);
+  pool=shuffle(pool);
+  // new words are shown foreign-first; later, half of the cards ask the other way round
+  const queue=pool.map(w=>({id:w.id,rev:w.box>=2&&Math.random()<.5}));
+  ui.session={queue,i:0,shown:false,right:0,total:queue.length,practice,missed:new Set()};
+  render();
+}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function answer(ok){
+  const s=ui.session,item=s.queue[s.i],w=state.words.find(x=>x.id===item.id);
+  const firstTry=!s.missed.has(item.id);
+  if(w&&firstTry){
+    if(ok){s.right++;w.right++}else{w.wrong++}
+    if(!s.practice){
+      if(ok){w.box=Math.min(w.box+1,INTERVALS.length-1);w.due=dayStart()+INTERVALS[w.box]*DAY+3*3600000}
+      else{w.box=Math.min(w.box,1)||1;w.due=dayStart()+DAY+3*3600000}
+    }
+    state.log[dkey()]=(state.log[dkey()]||0)+1;
+    save();
+  }
+  if(!ok&&firstTry){s.missed.add(item.id);s.queue.push({id:item.id,rev:item.rev})} // show once more at the end
+  s.i++;s.shown=false;render();
+}
+
+function speak(){
+  const s=ui.session;if(!s)return;const w=state.words.find(x=>x.id===s.queue[s.i].id);if(!w)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w.word);u.lang=w.lang==="en"?"en-US":"kk-KZ";u.rate=.9;speechSynthesis.speak(u)}catch(e){}
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html){$("#sheetRoot").innerHTML=`<div class="sheet-bg" data-close><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`}
+function closeSheet(){$("#sheetRoot").innerHTML=""}
+
+function editSheet(id){
+  const w=state.words.find(x=>x.id===id);if(!w)return;
+  const next=w.due<=Date.now()?"сегодня":new Date(w.due).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+  openSheet(`<h3>${esc(w.word)}</h3>
+    <p class="hint">${LANG[w.lang].name} · ${ST_NAME[status(w)]} · вспомнил ${w.right}, забыл ${w.wrong} · следующий повтор: ${next}</p>
+    <form id="editForm" data-id="${w.id}" style="display:grid;gap:12px" autocomplete="off">
+      <div class="field"><label for="eWord">Слово</label><input id="eWord" name="word" value="${esc(w.word)}" required lang="${w.lang}"></div>
+      <div class="field"><label for="eTr">Перевод</label><input id="eTr" name="tr" value="${esc(w.tr)}" required></div>
+      <div class="field"><label for="eEx">Пример</label><textarea id="eEx" name="ex">${esc(w.ex||"")}</textarea></div>
+      <div class="row"><button class="btn" type="submit">Сохранить</button><button class="btn ghost" type="button" data-close>Отмена</button></div>
+      <div class="row"><button class="btn ghost" type="button" data-reset="${w.id}">Учить заново</button><button class="btn bad" type="button" data-del="${w.id}">Удалить</button></div>
+    </form>`);
+}
+
+function backupSheet(){
+  const data=JSON.stringify({app:"tima-words",v:1,exported:new Date().toISOString(),words:state.words,log:state.log});
+  openSheet(`<h3>Резервная копия</h3>
+    <p class="hint">Скопируй этот текст и сохрани в Заметки или отправь себе в чат. Если слова пропадут или ты сменишь телефон, вставь его ниже и нажми «Восстановить».</p>
+    <textarea id="bkOut" class="search" style="min-height:90px;font-size:12px" readonly>${esc(data)}</textarea>
+    <button class="btn block" data-copy>Скопировать</button>
+    <div class="field"><label for="bkIn">Восстановить из копии</label><textarea id="bkIn" placeholder="Вставь сюда сохранённый текст"></textarea></div>
+    <div id="bkMsg"></div>
+    <div class="row"><button class="btn ghost" data-restore>Восстановить</button><button class="btn ghost" data-close>Закрыть</button></div>`);
+}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-close]");if(!t)return;
+  if(t.classList.contains("sheet-bg")&&e.target!==t)return;
+  const d=t.dataset;
+  if(d.tab){ui.tab=d.tab;if(d.tab!=="review")ui.session=null;closeSheet();render();window.scrollTo(0,0);return}
+  if(d.go){ui.tab=d.go;render();if(d.practice!==undefined)startSession(true);window.scrollTo(0,0);return}
+  if(d.seg){ui[d.seg]=d.val;if(d.seg==="addLang"){state.lastLang=d.val;save()}render();if(d.seg==="addLang")$("#fWord")?.focus();return}
+  if(d.fst){ui.filterSt=d.fst;render();return}
+  if(d.ins){const i=$("#fWord"),a=i.selectionStart??i.value.length,b=i.selectionEnd??a;i.value=i.value.slice(0,a)+d.ins+i.value.slice(b);i.focus();i.setSelectionRange(a+1,a+1);return}
+  if(d.start){startSession(d.start==="practice");return}
+  if(d.show!==undefined){ui.session.shown=true;render();return}
+  if(d.ans!==undefined){answer(d.ans==="1");return}
+  if(d.speak!==undefined){speak();return}
+  if(d.stop!==undefined||d.finish!==undefined){ui.session=null;ui.tab=d.finish!==undefined?"home":"review";render();return}
+  if(d.edit){editSheet(d.edit);return}
+  if(d.backup!==undefined){backupSheet();return}
+  if(d.del){
+    if(t.dataset.armed){state.words=state.words.filter(w=>w.id!==d.del);save();closeSheet();render();return}
+    t.dataset.armed="1";t.textContent="Точно удалить?";return}
+  if(d.reset){const w=state.words.find(x=>x.id===d.reset);if(w){w.box=0;w.due=Date.now();save()}closeSheet();render();return}
+  if(d.copy!==undefined){const ta=$("#bkOut");const done=()=>{t.textContent="Скопировано"};
+    try{navigator.clipboard.writeText(ta.value).then(done,()=>{ta.select();document.execCommand&&document.execCommand("copy");done()})}catch(err){ta.select()}return}
+  if(d.restore!==undefined){
+    const m=$("#bkMsg");
+    try{const o=JSON.parse($("#bkIn").value);if(!o||!Array.isArray(o.words))throw 0;
+      const have=new Set(state.words.map(w=>w.lang+"|"+norm(w.word)));let added=0;
+      o.words.forEach(w=>{if(w&&w.word&&w.tr&&(w.lang==="en"||w.lang==="kk")&&!have.has(w.lang+"|"+norm(w.word))){state.words.push(Object.assign({id:uid(),ex:"",box:0,due:Date.now(),created:Date.now(),right:0,wrong:0},w));added++}});
+      Object.entries(o.log||{}).forEach(([k,v])=>{state.log[k]=Math.max(state.log[k]||0,+v||0)});
+      save();m.innerHTML=`<div class="msg ok">Восстановлено слов: ${added}.</div>`;render();
+    }catch(err){m.innerHTML=`<div class="msg err">Не получилось прочитать копию. Вставь текст целиком, от первой до последней скобки.</div>`}
+    return}
+  if(d.close!==undefined){if(t.classList.contains("sheet-bg")&&e.target!==t)return;closeSheet();return}
+});
+document.addEventListener("submit",e=>{
+  e.preventDefault();
+  if(e.target.id==="addForm")addWord(e.target);
+  if(e.target.id==="editForm"){const f=e.target,w=state.words.find(x=>x.id===f.dataset.id);
+    if(w&&f.word.value.trim()&&f.tr.value.trim()){w.word=f.word.value.trim();w.tr=f.tr.value.trim();w.ex=f.ex.value.trim();save()}
+    closeSheet();render()}
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="q"){ui.q=e.target.value;const tmp=document.createElement("div");tmp.innerHTML=wordsView();$("#list").replaceWith(tmp.querySelector("#list"))}
+});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!ui.session)render()});
+
+render();
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!location.hostname.endsWith("claude.ai")&&!location.hostname.includes("claudeusercontent")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+})();
+</script>
+</body></html>
