@@ -1,0 +1,1 @@
+{"name":"Мой бюджет","short_name":"Бюджет","description":"Бюджет по месяцам: постоянная зарплата и платежи появляются сами","start_url":"./","scope":"./","display":"standalone","orientation":"portrait","background_color":"#F1F4F2","theme_color":"#1F7A5A","lang":"ru","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
