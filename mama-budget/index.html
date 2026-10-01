@@ -47,6 +47,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .hero .lbl{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .big{font-size:clamp(34px,10vw,44px);font-weight:700;line-height:1.05;letter-spacing:-.01em}
 .big.neg{color:var(--out)}
+.carry{display:flex;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.carry b{font-weight:600}
 .three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .three div{display:grid;gap:2px}
 .three span{font-size:13px;color:var(--muted)}
@@ -98,6 +100,7 @@ textarea{width:100%;min-height:90px;background:var(--bg);border:1px solid var(--
   <div class="hero" aria-live="polite">
     <div class="lbl">Останется к концу месяца</div>
     <div class="big num" id="left">…</div>
+    <div class="carry small"><span class="muted">С прошлого месяца</span><b class="num" id="carry">…</b></div>
     <div class="three">
       <div><span>Приход</span><b class="num in" id="sumIn">…</b></div>
       <div><span>Расход</span><b class="num out" id="sumOut">…</b></div>
@@ -149,6 +152,20 @@ textarea{width:100%;min-height:90px;background:var(--bg);border:1px solid var(--
 
   <section>
     <details>
+      <summary>Деньги на начало</summary>
+      <form id="sf" style="margin-top:10px">
+        <p class="note">Сколько денег было в начале первого месяца в приложении. Эта сумма и остаток каждого месяца переходят в следующий.</p>
+        <div class="row">
+          <input id="sAmt" type="number" inputmode="numeric" step="1" placeholder="Сумма, ₸">
+          <input id="sYm" type="month" style="max-width:170px" aria-label="С какого месяца">
+        </div>
+        <button class="btn" type="submit">Сохранить</button>
+      </form>
+    </details>
+  </section>
+
+  <section>
+    <details>
       <summary>Резервная копия</summary>
       <div style="display:grid;gap:8px;margin-top:10px">
         <p class="note">Данные хранятся на этом телефоне. Скопируй копию и отправь себе, чтобы не потерять.</p>
@@ -177,8 +194,8 @@ function shiftYm(ym,k){const [y,m]=ym.split("-").map(Number);return ymOf(new Dat
 function monthName(ym){const [y,m]=ym.split("-").map(Number);return new Date(y,m-1,1).toLocaleDateString("ru-RU",{month:"long",year:"numeric"}).replace(" г.","")}
 function dayLabel(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("ru-RU",{day:"numeric",month:"long",weekday:"short"})}
 
-let state={recurring:[],done:{},tx:[]};
-function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&Array.isArray(s.recurring)) state={recurring:s.recurring,done:s.done||{},tx:s.tx||[]}}catch(e){}}
+let state={recurring:[],done:{},tx:[],start:null};
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&Array.isArray(s.recurring)) state={recurring:s.recurring,done:s.done||{},tx:s.tx||[],start:s.start||null}}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){status("Не получилось сохранить на этом устройстве.")}}
 function status(s){$("status").textContent=s; clearTimeout(status.t); status.t=setTimeout(()=>$("status").textContent="",4000)}
 
@@ -198,14 +215,32 @@ function totals(ym){
   for(const t of state.tx) if(t.date.slice(0,7)===ym){const v=t.amount*sign(t.kind); left+=v; if(v>0) inc+=v; else out-=v}
   return {inc,out,wait,left};
 }
+// Money carried into `ym`: the starting amount plus what was left in every earlier month.
+function firstYm(){
+  let f=state.start?state.start.ym:null;
+  for(const r of state.recurring) if(!f||r.from<f) f=r.from;
+  for(const t of state.tx){const m=t.date.slice(0,7); if(!f||m<f) f=m}
+  return f;
+}
+function carryInto(ym){
+  let sum=0, m=firstYm();
+  if(state.start&&state.start.ym<ym) sum+=state.start.amount;
+  for(let i=0;m&&m<ym&&i<600;i++,m=shiftYm(m,1)) sum+=totals(m).left;
+  if(state.start&&state.start.ym===ym) sum+=state.start.amount;
+  return sum;
+}
 
 function render(){
   $("mName").textContent=monthName(view);
-  const t=totals(view);
-  $("left").textContent=(t.left<0?"−":"")+fmt(Math.abs(t.left));
-  $("left").classList.toggle("neg",t.left<0);
+  const t=totals(view), c=carryInto(view), left=c+t.left;
+  $("left").textContent=(left<0?"−":"")+fmt(Math.abs(left));
+  $("left").classList.toggle("neg",left<0);
+  $("carry").textContent=(c>0?"+":c<0?"−":"")+fmt(Math.abs(c));
+  $("carry").className="num "+(c<0?"out":c>0?"in":"");
   $("sumIn").textContent=fmt(t.inc); $("sumOut").textContent=fmt(t.out);
   $("sumWait").textContent=(t.wait>0?"+":t.wait<0?"−":"")+fmt(Math.abs(t.wait));
+  if(document.activeElement!==$("sAmt")) $("sAmt").value=state.start?state.start.amount:"";
+  if(document.activeElement!==$("sYm")) $("sYm").value=state.start?state.start.ym:view;
   renderRec(); renderHist(); $("bk").value=JSON.stringify(state);
 }
 
@@ -289,10 +324,16 @@ $("tf").addEventListener("submit",e=>{
   save(); view=date.slice(0,7); render(); $("tAmt").value="";$("tNote").value="";
   status("Записала: "+(tKind==="in"?"+":"−")+fmt(amount));
 });
+$("sf").addEventListener("submit",e=>{
+  e.preventDefault();
+  const v=$("sAmt").value.trim();
+  if(v===""){state.start=null}else{state.start={amount:Math.round(Number(v))||0,ym:$("sYm").value||view}}
+  save(); render(); status(state.start?"Сохранено: "+fmt(state.start.amount)+" на начало":"Сумма на начало убрана");
+});
 $("prev").onclick=()=>{view=shiftYm(view,-1);render()};
 $("next").onclick=()=>{view=shiftYm(view,1);render()};
 $("bkCopy").onclick=async()=>{try{await navigator.clipboard.writeText($("bk").value);status("Скопировано")}catch(e){$("bk").select();status("Выделено, нажми «Копировать»")}};
-$("bkLoad").onclick=()=>{try{const s=JSON.parse($("bk").value); if(!Array.isArray(s.recurring)||!Array.isArray(s.tx)) throw 0; state={recurring:s.recurring,done:s.done||{},tx:s.tx}; save(); render(); status("Восстановлено")}catch(e){status("Текст не похож на резервную копию. Вставь его целиком.")}};
+$("bkLoad").onclick=()=>{try{const s=JSON.parse($("bk").value); if(!Array.isArray(s.recurring)||!Array.isArray(s.tx)) throw 0; state={recurring:s.recurring,done:s.done||{},tx:s.tx,start:s.start||null}; save(); render(); status("Восстановлено")}catch(e){status("Текст не похож на резервную копию. Вставь его целиком.")}};
 
 load();
 // First visit: show how it works with example rows, marked as examples.
