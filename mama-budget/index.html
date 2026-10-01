@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Мой бюджет</title>
+<meta name="theme-color" content="#1F7A5A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Бюджет">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow phone column; month summary on top, then постоянные, then разовые записи */
+:root{
+  --bg:#F1F4F2; --card:#FFFFFF; --ink:#16231E; --muted:#5B6B64; --line:#DCE3DF;
+  --accent:#1F7A5A; --accent-soft:#DCEFE6; --on-accent:#FFFFFF;
+  --out:#B23A2E; --out-soft:#F8E3E0; --wait:#9A6A12; --wait-soft:#F7EDD6;
+  --body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1613; --card:#17211D; --ink:#E6EEEA; --muted:#98A8A1; --line:#28342F;
+  --accent:#4CC79A; --accent-soft:#16332A; --on-accent:#08231A;
+  --out:#F0796C; --out-soft:#3A1D1A; --wait:#E3B35A; --wait-soft:#33290F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1613; --card:#17211D; --ink:#E6EEEA; --muted:#98A8A1; --line:#28342F;
+  --accent:#4CC79A; --accent-soft:#16332A; --on-accent:#08231A;
+  --out:#F0796C; --out-soft:#3A1D1A; --wait:#E3B35A; --wait-soft:#33290F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;padding-inline:16px;padding-block:16px 56px;margin:0}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:14px}
+h1{font-size:22px;font-weight:700;margin:0}
+h2{font-size:17px;font-weight:600;margin:0;text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.month{display:flex;align-items:center;gap:6px}
+.month b{min-width:130px;text-align:center;font-weight:600;text-transform:capitalize}
+.nav{border:1px solid var(--line);background:var(--card);border-radius:12px;width:40px;height:40px;font-size:18px}
+.hero{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;display:grid;gap:12px}
+.hero .lbl{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.big{font-size:clamp(34px,10vw,44px);font-weight:700;line-height:1.05;letter-spacing:-.01em}
+.big.neg{color:var(--out)}
+.carry{display:flex;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.carry b{font-weight:600}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.three div{display:grid;gap:2px}
+.three span{font-size:13px;color:var(--muted)}
+.three b{font-size:17px;font-weight:600}
+.in{color:var(--accent)} .out{color:var(--out)}
+section{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.list{display:flex;flex-direction:column}
+.item{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item .t{flex:1;min-width:0}
+.item .t div:first-child{font-weight:500;overflow-wrap:anywhere}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:1px}
+.tag.salary{background:var(--accent-soft);color:var(--accent)}
+.amt{font-weight:600;white-space:nowrap}
+.chk{border:1px solid var(--line);background:transparent;border-radius:10px;padding:7px 10px;font-size:14px;font-weight:600;white-space:nowrap}
+.chk.done{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.chk.wait{background:var(--wait-soft);border-color:transparent;color:var(--wait)}
+.x{border:0;background:transparent;color:var(--muted);padding:6px 8px;border-radius:8px;font-size:15px}
+.x.arm{color:var(--out);font-weight:600;font-size:13px}
+form{display:flex;flex-direction:column;gap:10px}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px;border-radius:9px;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.row{display:flex;gap:8px}
+input[type=number],input[type=text],input[type=date]{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0;width:100%}
+.primary{background:var(--accent);color:var(--on-accent);border:0;border-radius:12px;padding:13px;font-weight:600}
+.note{font-size:14px;color:var(--muted);margin:0}
+.day{font-size:13px;font-weight:600;color:var(--muted);padding-top:10px}
+details summary{cursor:pointer;color:var(--muted);font-size:14px}
+textarea{width:100%;min-height:90px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;font:13px ui-monospace,Menlo,monospace;color:var(--ink)}
+.btn{border:1px solid var(--line);background:transparent;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:600}
+#status{text-align:center;font-size:14px;color:var(--muted);min-height:20px}
+@media (prefers-reduced-motion:no-preference){.chk,.nav,.primary{transition:background .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Мой бюджет</h1>
+    <div class="month">
+      <button class="nav" id="prev" type="button" aria-label="Предыдущий месяц">‹</button>
+      <b id="mName">…</b>
+      <button class="nav" id="next" type="button" aria-label="Следующий месяц">›</button>
+    </div>
+  </div>
+
+  <div class="hero" aria-live="polite">
+    <div class="lbl">Останется к концу месяца</div>
+    <div class="big num" id="left">…</div>
+    <div class="carry small"><span class="muted">С прошлого месяца</span><b class="num" id="carry">…</b></div>
+    <div class="three">
+      <div><span>Приход</span><b class="num in" id="sumIn">…</b></div>
+      <div><span>Расход</span><b class="num out" id="sumOut">…</b></div>
+      <div><span>Ещё ждём</span><b class="num" id="sumWait">…</b></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="sec-h"><h2>Постоянные</h2><span class="small muted">каждый месяц</span></div>
+    <div class="list" id="rec"></div>
+    <details id="recAdd">
+      <summary>Добавить постоянное</summary>
+      <form id="rf" style="margin-top:10px">
+        <div class="seg" role="group" aria-label="Что добавить">
+          <button type="button" id="rOut" aria-pressed="true">Платёж</button>
+          <button type="button" id="rIn" aria-pressed="false">Зарплата</button>
+        </div>
+        <input id="rName" type="text" placeholder="Название, например «Коммуналка»" required>
+        <div class="row">
+          <input id="rAmt" type="number" inputmode="numeric" min="1" step="1" placeholder="Сумма, ₸" required>
+          <input id="rDay" type="number" inputmode="numeric" min="1" max="31" step="1" placeholder="Число" required style="max-width:110px">
+        </div>
+        <p class="note" id="rHint">Платёж будет появляться каждый месяц в этот день.</p>
+        <button class="primary" type="submit" id="rBtn">Добавить платёж</button>
+      </form>
+    </details>
+  </section>
+
+  <section>
+    <h2>Записать</h2>
+    <form id="tf">
+      <div class="seg" role="group" aria-label="Тип">
+        <button type="button" id="tOut" aria-pressed="true">Расход</button>
+        <button type="button" id="tIn" aria-pressed="false">Приход</button>
+      </div>
+      <div class="row">
+        <input id="tAmt" type="number" inputmode="numeric" min="1" step="1" placeholder="Сумма, ₸" required>
+        <input id="tDate" type="date" style="max-width:170px">
+      </div>
+      <input id="tNote" type="text" placeholder="На что (необязательно)">
+      <button class="primary" type="submit" id="tBtn">Записать</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Записи за месяц</h2>
+    <div class="list" id="hist"></div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Деньги на начало</summary>
+      <form id="sf" style="margin-top:10px">
+        <p class="note">Сколько денег было в начале первого месяца в приложении. Эта сумма и остаток каждого месяца переходят в следующий.</p>
+        <div class="row">
+          <input id="sAmt" type="number" inputmode="numeric" step="1" placeholder="Сумма, ₸">
+          <input id="sYm" type="month" style="max-width:170px" aria-label="С какого месяца">
+        </div>
+        <button class="btn" type="submit">Сохранить</button>
+      </form>
+    </details>
+  </section>
+
+  <section>
+    <details>
+      <summary>Резервная копия</summary>
+      <div style="display:grid;gap:8px;margin-top:10px">
+        <p class="note">Данные хранятся на этом телефоне. Скопируй копию и отправь себе, чтобы не потерять.</p>
+        <textarea id="bk" aria-label="Резервная копия"></textarea>
+        <div class="row">
+          <button class="btn" type="button" id="bkCopy">Скопировать</button>
+          <button class="btn" type="button" id="bkLoad">Восстановить из текста</button>
+        </div>
+      </div>
+    </details>
+  </section>
+  <div id="status"></div>
+</div>
+
+<script>
+(function(){
+const KEY="mama-budget-v2";
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const fmt=n=>Math.round(n).toLocaleString("ru-RU").replace(/[ ,]/g," ")+" ₸";
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const ymOf=d=>d.getFullYear()+"-"+pad(d.getMonth()+1);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function daysIn(ym){const [y,m]=ym.split("-").map(Number);return new Date(y,m,0).getDate()}
+function shiftYm(ym,k){const [y,m]=ym.split("-").map(Number);return ymOf(new Date(y,m-1+k,1))}
+function monthName(ym){const [y,m]=ym.split("-").map(Number);return new Date(y,m-1,1).toLocaleDateString("ru-RU",{month:"long",year:"numeric"}).replace(" г.","")}
+function dayLabel(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("ru-RU",{day:"numeric",month:"long",weekday:"short"})}
+
+let state={recurring:[],done:{},tx:[],start:null};
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&Array.isArray(s.recurring)) state={recurring:s.recurring,done:s.done||{},tx:s.tx||[],start:s.start||null}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){status("Не получилось сохранить на этом устройстве.")}}
+function status(s){$("status").textContent=s; clearTimeout(status.t); status.t=setTimeout(()=>$("status").textContent="",4000)}
+
+let view=ymOf(new Date());
+// A recurring item (payment or salary) shows in every month from `from` up to `until`.
+function activeIn(r,ym){return r.from<=ym && (!r.until||ym<=r.until)}
+function recFor(ym){return state.recurring.filter(r=>activeIn(r,ym)).sort((a,b)=>a.day-b.day)}
+function isDone(ym,id){return !!(state.done[ym]&&state.done[ym][id])}
+function sign(k){return k==="in"?1:-1}
+
+function totals(ym){
+  let inc=0,out=0,wait=0,left=0;
+  for(const r of recFor(ym)){
+    const v=r.amount*sign(r.kind); left+=v;
+    if(isDone(ym,r.id)){ if(v>0) inc+=v; else out-=v } else wait+=v;
+  }
+  for(const t of state.tx) if(t.date.slice(0,7)===ym){const v=t.amount*sign(t.kind); left+=v; if(v>0) inc+=v; else out-=v}
+  return {inc,out,wait,left};
+}
+// Money carried into `ym`: the starting amount plus what was left in every earlier month.
+function firstYm(){
+  let f=state.start?state.start.ym:null;
+  for(const r of state.recurring) if(!f||r.from<f) f=r.from;
+  for(const t of state.tx){const m=t.date.slice(0,7); if(!f||m<f) f=m}
+  return f;
+}
+function carryInto(ym){
+  let sum=0, m=firstYm();
+  if(state.start&&state.start.ym<ym) sum+=state.start.amount;
+  for(let i=0;m&&m<ym&&i<600;i++,m=shiftYm(m,1)) sum+=totals(m).left;
+  if(state.start&&state.start.ym===ym) sum+=state.start.amount;
+  return sum;
+}
+
+function render(){
+  $("mName").textContent=monthName(view);
+  const t=totals(view), c=carryInto(view), left=c+t.left;
+  $("left").textContent=(left<0?"−":"")+fmt(Math.abs(left));
+  $("left").classList.toggle("neg",left<0);
+  $("carry").textContent=(c>0?"+":c<0?"−":"")+fmt(Math.abs(c));
+  $("carry").className="num "+(c<0?"out":c>0?"in":"");
+  $("sumIn").textContent=fmt(t.inc); $("sumOut").textContent=fmt(t.out);
+  $("sumWait").textContent=(t.wait>0?"+":t.wait<0?"−":"")+fmt(Math.abs(t.wait));
+  if(document.activeElement!==$("sAmt")) $("sAmt").value=state.start?state.start.amount:"";
+  if(document.activeElement!==$("sYm")) $("sYm").value=state.start?state.start.ym:view;
+  renderRec(); renderHist(); $("bk").value=JSON.stringify(state);
+}
+
+function delButton(onConfirm){
+  const b=document.createElement("button"); b.type="button"; b.className="x"; b.textContent="✕"; b.setAttribute("aria-label","Удалить");
+  b.onclick=()=>{ if(!b.classList.contains("arm")){b.classList.add("arm");b.textContent="Удалить?";setTimeout(()=>{b.classList.remove("arm");b.textContent="✕"},3000);return} onConfirm() };
+  return b;
+}
+
+function renderRec(){
+  const box=$("rec"); box.textContent="";
+  const list=recFor(view);
+  if(!list.length){const e=document.createElement("p");e.className="note";e.textContent="Пока ничего. Добавь зарплату и платежи ниже, и они будут появляться каждый месяц сами.";box.append(e);return}
+  const today=iso(new Date());
+  list.forEach(r=>{
+    const el=document.createElement("div"); el.className="item";
+    const t=document.createElement("div"); t.className="t";
+    const a=document.createElement("div"); a.textContent=r.name;
+    if(r.kind==="in"){const g=document.createElement("span");g.className="tag salary";g.textContent="зарплата";a.append(g)}
+    const day=Math.min(r.day,daysIn(view));
+    const s=document.createElement("div"); s.className="small muted"; s.textContent=day+"-го числа";
+    t.append(a,s);
+    const m=document.createElement("span"); m.className="amt num "+(r.kind==="in"?"in":"out"); m.textContent=(r.kind==="in"?"+":"−")+fmt(r.amount);
+    const done=isDone(view,r.id);
+    const late=!done && view+"-"+pad(day)<today;
+    const c=document.createElement("button"); c.type="button"; c.className="chk"+(done?" done":late?" wait":"");
+    c.textContent=done?(r.kind==="in"?"Получено ✓":"Оплачено ✓"):(r.kind==="in"?"Получила":"Оплатила");
+    c.setAttribute("aria-pressed",String(done));
+    c.onclick=()=>{ state.done[view]=state.done[view]||{}; if(done) delete state.done[view][r.id]; else state.done[view][r.id]=true; save(); render() };
+    // Removing stops it from this month on; earlier months keep it.
+    const del=delButton(()=>{
+      if(r.from>=view) state.recurring=state.recurring.filter(x=>x.id!==r.id);
+      else r.until=shiftYm(view,-1);
+      save(); render(); status("Убрала «"+r.name+"» начиная с этого месяца");
+    });
+    el.append(t,m,c,del); box.append(el);
+  });
+}
+
+function renderHist(){
+  const box=$("hist"); box.textContent="";
+  const list=state.tx.filter(t=>t.date.slice(0,7)===view).sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts);
+  if(!list.length){const e=document.createElement("p");e.className="note";e.textContent="В этом месяце разовых записей нет.";box.append(e);return}
+  let last="";
+  list.forEach(x=>{
+    if(x.date!==last){last=x.date;const d=document.createElement("div");d.className="day";d.textContent=dayLabel(x.date);box.append(d)}
+    const el=document.createElement("div"); el.className="item";
+    const t=document.createElement("div"); t.className="t";
+    const a=document.createElement("div"); a.textContent=x.note||(x.kind==="in"?"Приход":"Расход"); t.append(a);
+    const m=document.createElement("span"); m.className="amt num "+(x.kind==="in"?"in":"out"); m.textContent=(x.kind==="in"?"+":"−")+fmt(x.amount);
+    el.append(t,m,delButton(()=>{state.tx=state.tx.filter(y=>y.id!==x.id);save();render()}));
+    box.append(el);
+  });
+}
+
+// Forms
+let rKind="out", tKind="out";
+function setR(k){rKind=k;$("rOut").setAttribute("aria-pressed",String(k==="out"));$("rIn").setAttribute("aria-pressed",String(k==="in"));
+  $("rName").placeholder=k==="in"?"Название, например «Зарплата»":"Название, например «Коммуналка»";
+  if(k==="in"&&!$("rName").value) $("rName").value="Зарплата";
+  if(k==="out"&&$("rName").value==="Зарплата") $("rName").value="";
+  $("rHint").textContent=k==="in"?"Зарплата будет появляться каждый месяц в этот день.":"Платёж будет появляться каждый месяц в этот день.";
+  $("rBtn").textContent=k==="in"?"Добавить зарплату":"Добавить платёж"}
+$("rOut").onclick=()=>setR("out"); $("rIn").onclick=()=>setR("in");
+$("rf").addEventListener("submit",e=>{
+  e.preventDefault();
+  const name=$("rName").value.trim(), amount=Math.round(Number($("rAmt").value)), day=Math.round(Number($("rDay").value));
+  if(!name||!(amount>0)||!(day>=1&&day<=31)) return;
+  state.recurring.push({id:uid(),kind:rKind,name,amount,day,from:view,until:null});
+  save(); render(); $("rName").value="";$("rAmt").value="";$("rDay").value="";
+  status((rKind==="in"?"Зарплата":"Платёж")+" «"+name+"» добавлен, будет каждый месяц");
+});
+function setT(k){tKind=k;$("tOut").setAttribute("aria-pressed",String(k==="out"));$("tIn").setAttribute("aria-pressed",String(k==="in"))}
+$("tOut").onclick=()=>setT("out"); $("tIn").onclick=()=>setT("in");
+$("tDate").value=iso(new Date());
+$("tf").addEventListener("submit",e=>{
+  e.preventDefault();
+  const amount=Math.round(Number($("tAmt").value)); if(!(amount>0)) return;
+  const date=$("tDate").value||iso(new Date());
+  state.tx.push({id:uid(),kind:tKind,amount,note:$("tNote").value.trim(),date,ts:Date.now()});
+  save(); view=date.slice(0,7); render(); $("tAmt").value="";$("tNote").value="";
+  status("Записала: "+(tKind==="in"?"+":"−")+fmt(amount));
+});
+$("sf").addEventListener("submit",e=>{
+  e.preventDefault();
+  const v=$("sAmt").value.trim();
+  if(v===""){state.start=null}else{state.start={amount:Math.round(Number(v))||0,ym:$("sYm").value||view}}
+  save(); render(); status(state.start?"Сохранено: "+fmt(state.start.amount)+" на начало":"Сумма на начало убрана");
+});
+$("prev").onclick=()=>{view=shiftYm(view,-1);render()};
+$("next").onclick=()=>{view=shiftYm(view,1);render()};
+$("bkCopy").onclick=async()=>{try{await navigator.clipboard.writeText($("bk").value);status("Скопировано")}catch(e){$("bk").select();status("Выделено, нажми «Копировать»")}};
+$("bkLoad").onclick=()=>{try{const s=JSON.parse($("bk").value); if(!Array.isArray(s.recurring)||!Array.isArray(s.tx)) throw 0; state={recurring:s.recurring,done:s.done||{},tx:s.tx,start:s.start||null}; save(); render(); status("Восстановлено")}catch(e){status("Текст не похож на резервную копию. Вставь его целиком.")}};
+
+load();
+// First visit: show how it works with example rows, marked as examples.
+if(!state.recurring.length&&!state.tx.length){
+  state.recurring=[
+    {id:"ex1",kind:"in",name:"Зарплата (пример)",amount:250000,day:10,from:view,until:null},
+    {id:"ex2",kind:"out",name:"Коммуналка (пример)",amount:35000,day:15,from:view,until:null},
+    {id:"ex3",kind:"out",name:"Кредит (пример)",amount:60000,day:20,from:view,until:null}];
+}
+render();
+})();
+</script>
+<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{})</script>
+</body>
+</html>
