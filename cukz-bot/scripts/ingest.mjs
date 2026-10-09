@@ -3,7 +3,8 @@
 // downloaded with the admin's Microsoft sign-in.
 //
 // Env: TELEGRAM_TOKEN, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID (or a `wrangler login`).
-// Flags: --force (ignore 20h auto-update gap), --file <path> (load a local copy of the file).
+// Flags: --force (ignore 20h auto-update gap), --file <path> (load a local copy of the file),
+//        --save <path> (also keep a copy of the downloaded file; it holds every student's timetable, never commit it).
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -17,7 +18,9 @@ const MS_CLIENT = 'd3590ed6-52b3-4102-aeff-aad2292ab01c';
 const MS_SCOPE = 'https://graph.microsoft.com/.default offline_access';
 const AUTO_EVERY_MS = 20 * 3600 * 1000;
 const force = process.argv.includes('--force');
-const localFile = process.argv.includes('--file') ? process.argv[process.argv.indexOf('--file') + 1] : null;
+const argValue = (flag) => (process.argv.includes(flag) ? process.argv[process.argv.indexOf(flag) + 1] : null);
+const localFile = argValue('--file');
+const savePath = argValue('--save');
 
 const sql = (v) => (v === null || v === undefined ? 'NULL' : `'${String(v).replace(/'/g, "''")}'`);
 
@@ -113,6 +116,7 @@ async function main() {
       return;
     }
 
+    if (savePath) writeFileSync(savePath, html);
     const hash = createHash('sha256').update(html).digest('hex');
     if (hash === kv.tt_hash) {
       console.log('Timetable unchanged.');
