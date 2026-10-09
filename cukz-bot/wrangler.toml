@@ -1,0 +1,12 @@
+name = "cukz-bot"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+[triggers]
+# Every 5 minutes: class reminders and Microsoft login polling
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cukz-bot"
+database_id = "__D1_ID__" # filled in by the deploy workflow
