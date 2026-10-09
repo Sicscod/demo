@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My KNUS">
+<meta name="theme-color" content="#16294F">
+<title>My KNUS</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>
+:root{--navy:#16294F;--navy2:#21396B;--sky:#8FC3E8;--sky2:#E6F2FB;--bg:#F3F6FA;--card:#fff;--text:#13203A;--muted:#6B7891;--line:#E3E8F0;--ok:#1F9D63;--warn:#E08A1E;--bad:#D6453D}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+.top{background:var(--navy);color:#fff;padding:calc(env(safe-area-inset-top) + 14px) 18px 22px;border-radius:0 0 26px 26px}
+.top .row{display:flex;align-items:center;gap:12px}
+.top img{width:40px;height:40px;border-radius:10px;background:#fff}
+.top h1{font-size:22px;margin:0;font-weight:700}
+.top .sub{color:#B9CCE6;font-size:14px}
+main{padding:16px 16px 8px}
+.page{display:none}.page.on{display:block}
+.card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(22,41,79,.06)}
+.next{margin-top:-34px;position:relative}
+.label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.next h3{margin:6px 0 4px;font-size:18px}
+.meta{color:var(--muted);font-size:14px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--sky2);color:var(--navy)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.tile{background:var(--card);border-radius:18px;padding:14px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:600;text-align:center;box-shadow:0 1px 3px rgba(22,41,79,.06)}
+.tile:active{transform:scale(.96)}
+.ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--sky2);color:var(--navy)}
+.ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+h2{font-size:20px;margin:22px 2px 10px}
+.news{display:flex;flex-direction:column;gap:10px}
+.news .card{display:flex;gap:12px;align-items:flex-start}
+.news .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--sky);margin-top:6px}
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
+.days::-webkit-scrollbar{display:none}
+.day{flex:1 0 50px;background:var(--card);border-radius:14px;padding:8px 0;text-align:center;box-shadow:0 1px 3px rgba(22,41,79,.06)}
+.day b{display:block;font-size:18px}.day span{font-size:12px;color:var(--muted)}
+.day.on{background:var(--navy);color:#fff}.day.on span{color:#B9CCE6}
+.day.today:not(.on) b{color:var(--navy2);text-decoration:underline;text-underline-offset:3px}
+.weekbar{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px}
+.weekbar button{width:36px;height:36px;border-radius:12px;background:var(--card);font-size:18px;box-shadow:0 1px 3px rgba(22,41,79,.06)}
+.weekbar div{font-weight:700}
+.lessons{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.lesson{display:flex;gap:12px;background:var(--card);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(22,41,79,.06);border-left:5px solid var(--sky)}
+.lesson.lec{border-left-color:var(--navy)}
+.lesson.now{outline:2px solid var(--navy)}
+.time{flex:none;width:52px;font-weight:700;font-size:15px}.time span{display:block;font-weight:500;color:var(--muted);font-size:13px}
+.lesson h4{margin:0 0 4px;font-size:16px}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+.prof{text-align:center;padding:22px 16px}
+.ava{width:84px;height:84px;border-radius:50%;margin:0 auto 10px;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:30px;font-weight:700}
+.prof h3{margin:0;font-size:20px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.stats .card{text-align:center;padding:12px 6px}.stats b{display:block;font-size:20px;color:var(--navy)}
+.list{margin-top:14px;padding:4px 0}
+.list .it{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.list .it:last-child{border-bottom:0}
+.list .it span:last-child{color:var(--muted)}
+.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:#8A96AB;padding:4px 0}
+.tabs svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--navy)}
+.sheet-bg{position:fixed;inset:0;background:rgba(10,20,40,.4);display:none;z-index:10}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:85vh;overflow:auto;background:var(--bg);border-radius:22px 22px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s;z-index:11}
+.sheet.on{transform:none}.sheet-bg.on{display:block}
+.grab{width:40px;height:5px;border-radius:3px;background:#C9D2E0;margin:0 auto 10px}
+.sheet h2{margin-top:6px}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row2:last-child{border-bottom:0}
+.score{font-weight:700;color:var(--navy)}
+.bar{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--navy)}
+input.name{font:inherit;font-size:20px;font-weight:700;text-align:center;border:1px solid var(--line);border-radius:12px;padding:8px;width:100%}
+</style></head>
+<body>
+<header class="top">
+  <div class="row"><img src="icon-180.png" alt=""><div><h1 id="title">My KNUS</h1><div class="sub" id="hello"></div></div></div>
+</header>
+<main>
+  <section class="page on" id="p-home">
+    <div class="card next" id="next"></div>
+    <div class="grid" id="tiles"></div>
+    <h2>News</h2>
+    <div class="news" id="news"></div>
+  </section>
+  <section class="page" id="p-schedule">
+    <div class="weekbar"><button id="prevW" aria-label="Previous week">‹</button><div id="weekLbl"></div><button id="nextW" aria-label="Next week">›</button></div>
+    <div class="days" id="days"></div>
+    <div class="lessons" id="lessons"></div>
+  </section>
+  <section class="page" id="p-profile">
+    <div class="card prof">
+      <div class="ava" id="ava"></div>
+      <h3 id="pName"></h3>
+      <div class="meta" id="pGroup"></div>
+      <div style="margin-top:8px"><span class="pill">Student</span></div>
+    </div>
+    <div class="stats">
+      <div class="card"><b>3.41</b><span class="meta">GPA</span></div>
+      <div class="card"><b>94%</b><span class="meta">Attendance</span></div>
+      <div class="card"><b>30</b><span class="meta">Credits</span></div>
+    </div>
+    <div class="card list" id="info"></div>
+    <div class="card list">
+      <button class="it" data-open="edit"><span>Edit name</span><span>›</span></button>
+      <button class="it" data-open="lang"><span>Language</span><span>English</span></button>
+      <button class="it" data-open="about"><span>About app</span><span>›</span></button>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
+  <button data-tab="schedule"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>Schedule</button>
+  <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profile</button>
+</nav>
+
+<div class="sheet-bg" id="sbg"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div id="sbody"></div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+// Basic first-year courses of a sports university. Pairs run 08:00-14:00.
+const SLOTS=[["08:00","09:20"],["09:30","10:50"],["11:00","12:20"],["12:40","14:00"]];
+const C={
+  hist:{n:"History of Kazakhstan",t:"Akhmetova A.S."},
+  kaz:{n:"Kazakh Language",t:"Seitkali G.M."},
+  eng:{n:"English for Sport",t:"Ivanova O.P."},
+  phil:{n:"Philosophy",t:"Kenzhebayev N.T."},
+  anat:{n:"Human Anatomy",t:"Bekova D.K."},
+  phys:{n:"Physiology of Sport",t:"Omarov B.Zh."},
+  tmpe:{n:"Theory & Methods of Physical Education",t:"Sarsenbayev E.A."},
+  psy:{n:"Sport Psychology",t:"Nurlanova A.B."},
+  bio:{n:"Biomechanics",t:"Tulegenov M.S."},
+  ict:{n:"ICT",t:"Zhakupova L.R."},
+  ath:{n:"Athletics",t:"Dzhaksybekov R.N."},
+  swim:{n:"Swimming",t:"Lee V.A."}
+};
+// [course, type, room] per slot; null = free
+const WEEK=[
+  [["hist","Lecture","A-204"],["anat","Lecture","B-112"],["anat","Practice","Lab 3"],["eng","Practice","A-310"]],
+  [["tmpe","Lecture","A-101"],["kaz","Practice","A-215"],["ath","Practice","Stadium"],null],
+  [["phys","Lecture","B-112"],["phil","Lecture","A-204"],["ict","Practice","IT-2"],["eng","Practice","A-310"]],
+  [["psy","Lecture","A-118"],["bio","Lecture","B-205"],["swim","Practice","Pool"],null],
+  [["tmpe","Practice","Gym 1"],["phys","Practice","Lab 5"],["kaz","Practice","A-215"],["hist","Seminar","A-204"]],
+  [["ath","Practice","Stadium"],["bio","Practice","Lab 2"],null,null]
+];
+const DN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+let name=store.get("knus-name","Student");
+const GROUP="PE-25-01 · 1st year";
+const FACULTY="Faculty of Physical Education";
+
+function monday(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+const today=new Date();let wk=monday(today);let sel=Math.min((today.getDay()+6)%7,5);
+const mins=s=>{const[h,m]=s.split(":");return h*60+ +m};
+
+function lessonsOf(i){return (WEEK[i]||[]).map((l,j)=>l&&{c:C[l[0]],type:l[1],room:l[2],from:SLOTS[j][0],to:SLOTS[j][1]}).filter(Boolean)}
+
+function renderHome(){
+  const h=today.getHours();
+  $("#hello").textContent=(h<12?"Good morning, ":h<18?"Good afternoon, ":"Good evening, ")+name.split(" ")[0];
+  const di=(today.getDay()+6)%7, now=today.getHours()*60+today.getMinutes();
+  let lbl="Next lesson",L=lessonsOf(di).find(l=>mins(l.to)>now);
+  if(L&&mins(L.from)<=now)lbl="Now";
+  if(!L){for(let k=1;k<=7&&!L;k++){const d=(di+k)%7;L=lessonsOf(d)[0];if(L)lbl=k===1?"Tomorrow":DN[d]}}
+  $("#next").innerHTML=L?`<div class="label">${lbl}</div><h3>${L.c.n}</h3><div class="meta">${L.from}–${L.to} · ${L.room} · ${L.c.t}</div><div style="margin-top:8px"><span class="pill">${L.type}</span></div>`:`<div class="label">Today</div><h3>No lessons</h3>`;
+}
+
+const I={
+  cal:'<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+  grade:'<path d="M4 4h16v16H4z"/><path d="M8 15l2.5-6 2.5 6M9 13h3M15 9v6M13 12h4"/>',
+  att:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  exam:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  lib:'<path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM8 7h6"/>',
+  pay:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6 15h4"/>',
+  doc:'<path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="M9 11h6M9 15h6"/>',
+  map:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  sport:'<circle cx="12" cy="12" r="9"/><path d="M3.5 9.5c5 1 12 1 17 0M3.5 14.5c5-1 12-1 17 0M12 3c-3 5-3 13 0 18"/>'
+};
+const TILES=[["cal","Schedule","schedule"],["grade","Grades","grades"],["att","Attendance","att"],["exam","Exams","exams"],["lib","Library","lib"],["pay","Payments","pay"],["doc","Certificates","doc"],["sport","Sport sections","sport"],["map","Campus","map"]];
+$("#tiles").innerHTML=TILES.map(t=>`<button class="tile" data-open="${t[2]}"><span class="ic"><svg viewBox="0 0 24 24">${I[t[0]]}</svg></span>${t[1]}</button>`).join("");
+
+const NEWS=[["Registration for sport sections is open","Football, volleyball, judo and swimming. Sign up at the sports office."],["Midterm week starts soon","Check the Exams section for your timetable."],["Library hours extended","Open until 20:00 on weekdays."]];
+$("#news").innerHTML=NEWS.map(n=>`<div class="card"><span class="dot"></span><div><b>${n[0]}</b><div class="meta">${n[1]}</div></div></div>`).join("");
+
+function renderSchedule(){
+  const end=new Date(wk);end.setDate(end.getDate()+5);
+  $("#weekLbl").textContent=`${wk.getDate()} ${MN[wk.getMonth()]} – ${end.getDate()} ${MN[end.getMonth()]}`;
+  const t0=monday(today).getTime()===wk.getTime(), ti=(today.getDay()+6)%7;
+  $("#days").innerHTML=DN.slice(0,6).map((d,i)=>{const x=new Date(wk);x.setDate(x.getDate()+i);return `<button class="day${i===sel?" on":""}${t0&&i===ti?" today":""}" data-d="${i}"><span>${d}</span><b>${x.getDate()}</b></button>`}).join("");
+  const now=today.getHours()*60+today.getMinutes(),isToday=t0&&sel===ti;
+  const L=lessonsOf(sel);
+  $("#lessons").innerHTML=L.length?L.map(l=>`<div class="lesson${l.type==="Lecture"?" lec":""}${isToday&&mins(l.from)<=now&&now<mins(l.to)?" now":""}"><div class="time">${l.from}<span>${l.to}</span></div><div><h4>${l.c.n}</h4><div class="meta">${l.room} · ${l.c.t}</div><div style="margin-top:6px"><span class="pill">${l.type}</span></div></div></div>`).join(""):`<div class="empty">No lessons 🎉</div>`;
+}
+$("#days").onclick=e=>{const b=e.target.closest(".day");if(b){sel=+b.dataset.d;renderSchedule()}};
+$("#prevW").onclick=()=>{wk.setDate(wk.getDate()-7);renderSchedule()};
+$("#nextW").onclick=()=>{wk.setDate(wk.getDate()+7);renderSchedule()};
+
+function renderProfile(){
+  $("#pName").textContent=name;
+  $("#ava").textContent=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  $("#pGroup").textContent=GROUP;
+  $("#info").innerHTML=[["Student ID","250103417"],["Faculty",FACULTY],["Specialty","Physical Culture & Sport"],["Group","PE-25-01"],["Year","1st"],["Advisor","Sarsenbayev E.A."]].map(r=>`<div class="it"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("");
+}
+
+const GRADES=[["hist",88],["kaz",92],["eng",81],["phil",76],["anat",84],["phys",79],["tmpe",95],["psy",87],["bio",73],["ict",90],["ath",97],["swim",93]];
+const letter=s=>s>=95?"A":s>=90?"A-":s>=85?"B+":s>=80?"B":s>=75?"B-":s>=70?"C+":"C";
+const SHEETS={
+  grades:()=>`<h2>Grades</h2><div class="card">${GRADES.map(g=>`<div class="row2"><div style="flex:1"><div>${C[g[0]].n}</div><div class="bar"><i style="width:${g[1]}%"></i></div></div><span class="score">${g[1]} · ${letter(g[1])}</span></div>`).join("")}</div>`,
+  att:()=>`<h2>Attendance</h2><div class="card">${GRADES.map((g,i)=>{const p=[100,96,88,92,100,90,100,94,85,100,100,95][i];return `<div class="row2"><span>${C[g[0]].n}</span><span class="score" style="color:${p>=90?"var(--ok)":"var(--warn)"}">${p}%</span></div>`}).join("")}</div>`,
+  exams:()=>`<h2>Exams</h2><div class="card">${[["anat","Midterm","27 Oct, 09:30","B-112"],["hist","Midterm","28 Oct, 08:00","A-204"],["tmpe","Midterm","30 Oct, 11:00","A-101"],["eng","Midterm","31 Oct, 09:30","A-310"]].map(e=>`<div class="row2"><div><div>${C[e[0]].n}</div><div class="meta">${e[1]} · ${e[3]}</div></div><span class="score">${e[2]}</span></div>`).join("")}</div>`,
+  lib:()=>`<h2>Library</h2><div class="card"><div class="row2"><span>Fundamentals of Human Anatomy</span><span class="meta">due 20 Oct</span></div><div class="row2"><span>Theory of Physical Education</span><span class="meta">due 2 Nov</span></div></div><p class="meta">Open Mon–Fri 09:00–20:00, Sat 10:00–16:00.</p>`,
+  pay:()=>`<h2>Payments</h2><div class="card"><div class="row2"><span>Tuition, fall semester</span><span class="score" style="color:var(--ok)">Paid</span></div><div class="row2"><span>Dormitory, October</span><span class="score" style="color:var(--ok)">Paid</span></div><div class="row2"><span>Dormitory, November</span><span class="score" style="color:var(--warn)">Due 1 Nov</span></div></div>`,
+  doc:()=>`<h2>Certificates</h2><div class="card"><div class="row2"><span>Certificate of enrollment</span><span class="pill">Order</span></div><div class="row2"><span>Transcript</span><span class="pill">Order</span></div><div class="row2"><span>Certificate for military office</span><span class="pill">Order</span></div></div>`,
+  sport:()=>`<h2>Sport sections</h2><div class="card">${[["Football","Mon, Wed 15:00"],["Volleyball","Tue, Thu 15:00"],["Judo","Mon, Fri 16:00"],["Swimming","Tue, Sat 14:30"],["Athletics","Wed, Fri 15:30"]].map(s=>`<div class="row2"><span>${s[0]}</span><span class="meta">${s[1]}</span></div>`).join("")}</div>`,
+  map:()=>`<h2>Campus</h2><div class="card"><div class="row2"><span>Building A</span><span class="meta">Lectures, dean's office</span></div><div class="row2"><span>Building B</span><span class="meta">Labs</span></div><div class="row2"><span>Stadium</span><span class="meta">Athletics</span></div><div class="row2"><span>Pool</span><span class="meta">Swimming</span></div><div class="row2"><span>Gym 1</span><span class="meta">Practice classes</span></div></div>`,
+  edit:()=>`<h2>Your name</h2><input class="name" id="nm" value="${name.replace(/"/g,"&quot;")}"><p></p><button class="tile" style="width:100%;flex-direction:row;justify-content:center;background:var(--navy);color:#fff;padding:14px" id="save">Save</button>`,
+  lang:()=>`<h2>Language</h2><div class="card"><div class="row2"><span>English</span><span>✓</span></div><div class="row2 meta"><span>Қазақша</span><span>soon</span></div><div class="row2 meta"><span>Русский</span><span>soon</span></div></div>`,
+  about:()=>`<h2>My KNUS</h2><p class="meta">Student app of the Kazakh National University of Sports. Add it to your Home Screen from Safari: Share → Add to Home Screen.</p>`
+};
+function openSheet(k){
+  if(k==="schedule"){go("schedule");return}
+  if(!SHEETS[k])return;
+  $("#sbody").innerHTML=SHEETS[k]();$("#sheet").classList.add("on");$("#sbg").classList.add("on");
+  if(k==="edit"){$("#save").onclick=()=>{const v=$("#nm").value.trim();if(v){name=v;store.set("knus-name",v);renderHome();renderProfile()}closeSheet()}}
+}
+function closeSheet(){$("#sheet").classList.remove("on");$("#sbg").classList.remove("on")}
+$("#sbg").onclick=closeSheet;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-open]");if(b)openSheet(b.dataset.open)});
+
+function go(t){
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+t));
+  $("#title").textContent=t==="home"?"My KNUS":t[0].toUpperCase()+t.slice(1);
+  scrollTo(0,0);
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+
+renderHome();renderSchedule();renderProfile();
+
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!location.hostname.endsWith("claude.ai")&&!location.hostname.includes("claudeusercontent")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body></html>
