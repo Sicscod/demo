@@ -3,246 +3,329 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My KNUS">
-<meta name="theme-color" content="#16294F">
+<meta name="theme-color" content="#ffffff">
 <title>My KNUS</title>
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
 <style>
-:root{--navy:#16294F;--navy2:#21396B;--sky:#8FC3E8;--sky2:#E6F2FB;--bg:#F3F6FA;--card:#fff;--text:#13203A;--muted:#6B7891;--line:#E3E8F0;--ok:#1F9D63;--warn:#E08A1E;--bad:#D6453D}
+:root{--blue:#1F6FEB;--blue2:#E3EDFD;--orange:#F5A623;--green:#3BA55C;--bg:#fff;--card:#F6F7F9;--line:#E6E8EC;--text:#1B1D21;--muted:#6E737C;--navy:#16294F}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
-body{min-height:100vh;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,"Segoe UI",sans-serif}
+body{min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
-.top{background:var(--navy);color:#fff;padding:calc(env(safe-area-inset-top) + 14px) 18px 22px;border-radius:0 0 26px 26px}
-.top .row{display:flex;align-items:center;gap:12px}
-.top img{width:40px;height:40px;border-radius:10px;background:#fff}
-.top h1{font-size:22px;margin:0;font-weight:700}
-.top .sub{color:#B9CCE6;font-size:14px}
-main{padding:16px 16px 8px}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.head{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 18px) 22px 10px}
+.head h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.01em}
+.head .logo{display:flex;align-items:center;gap:10px}
+.head .logo img{width:34px;height:34px;border-radius:8px}
 .page{display:none}.page.on{display:block}
-.card{background:var(--card);border-radius:18px;padding:16px;box-shadow:0 1px 3px rgba(22,41,79,.06)}
-.next{margin-top:-34px;position:relative}
-.label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.next h3{margin:6px 0 4px;font-size:18px}
-.meta{color:var(--muted);font-size:14px}
-.pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--sky2);color:var(--navy)}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-.tile{background:var(--card);border-radius:18px;padding:14px 8px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:600;text-align:center;box-shadow:0 1px 3px rgba(22,41,79,.06)}
-.tile:active{transform:scale(.96)}
-.ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--sky2);color:var(--navy)}
-.ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-h2{font-size:20px;margin:22px 2px 10px}
-.news{display:flex;flex-direction:column;gap:10px}
-.news .card{display:flex;gap:12px;align-items:flex-start}
-.news .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--sky);margin-top:6px}
-.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
-.days::-webkit-scrollbar{display:none}
-.day{flex:1 0 50px;background:var(--card);border-radius:14px;padding:8px 0;text-align:center;box-shadow:0 1px 3px rgba(22,41,79,.06)}
-.day b{display:block;font-size:18px}.day span{font-size:12px;color:var(--muted)}
-.day.on{background:var(--navy);color:#fff}.day.on span{color:#B9CCE6}
-.day.today:not(.on) b{color:var(--navy2);text-decoration:underline;text-underline-offset:3px}
-.weekbar{display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px}
-.weekbar button{width:36px;height:36px;border-radius:12px;background:var(--card);font-size:18px;box-shadow:0 1px 3px rgba(22,41,79,.06)}
-.weekbar div{font-weight:700}
-.lessons{display:flex;flex-direction:column;gap:10px;margin-top:14px}
-.lesson{display:flex;gap:12px;background:var(--card);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(22,41,79,.06);border-left:5px solid var(--sky)}
-.lesson.lec{border-left-color:var(--navy)}
-.lesson.now{outline:2px solid var(--navy)}
-.time{flex:none;width:52px;font-weight:700;font-size:15px}.time span{display:block;font-weight:500;color:var(--muted);font-size:13px}
-.lesson h4{margin:0 0 4px;font-size:16px}
-.empty{text-align:center;color:var(--muted);padding:40px 0}
-.prof{text-align:center;padding:22px 16px}
-.ava{width:84px;height:84px;border-radius:50%;margin:0 auto 10px;background:var(--navy);color:#fff;display:grid;place-items:center;font-size:30px;font-weight:700}
-.prof h3{margin:0;font-size:20px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-.stats .card{text-align:center;padding:12px 6px}.stats b{display:block;font-size:20px;color:var(--navy)}
-.list{margin-top:14px;padding:4px 0}
-.list .it{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+main{padding:0 16px}
+.today{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:18px;padding:30px 22px;margin-top:8px}
+.today svg{flex:none;width:26px;height:26px;color:#5B6068}
+.today b{display:block;font-weight:500;font-size:17px}
+.today span{font-size:14px;color:var(--muted)}
+h2{font-size:21px;margin:30px 4px 16px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;min-height:104px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:500;text-align:center;line-height:1.25}
+.tile:active{background:#ECEEF2}
+.tile svg{width:28px;height:28px}
+.o{color:var(--orange)}.b{color:var(--blue)}.g{color:#4A4F57}
+/* schedule */
+.cal{padding:0 12px}
+.calbar{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 14px}
+.calbar .t{flex:1;text-align:center;font-size:19px}
+.calbar .arr{width:36px;height:36px;display:grid;place-items:center}
+.mode{border:1px solid var(--line);border-radius:10px;padding:5px 13px;font-size:15px;margin-right:8px}
+.wd,.dates{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.wd div{color:var(--muted);font-size:15px;padding-bottom:12px}
+.dates button{height:62px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:17px}
+.dates .n{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.dates .td .n{background:var(--blue2);color:var(--blue)}
+.dates .sel .n{background:var(--blue);color:#fff}
+.dates .out{visibility:hidden}
+.dots{display:flex;gap:2px;height:5px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--blue)}
+.lessons{border-top:1px solid var(--line);padding:16px 12px 8px;display:flex;flex-direction:column;gap:12px}
+.ls{display:flex;gap:14px;border:1px solid var(--line);border-radius:16px;padding:16px 16px 16px 14px;background:#fff}
+.ls .bar{flex:none;width:4px;border-radius:2px;background:var(--blue)}
+.ls .body{flex:1;min-width:0}
+.ls .top{display:flex;justify-content:space-between;gap:10px}
+.ls h4{margin:0;font-size:16px;font-weight:600}
+.ls .tm{flex:none;font-size:15px;font-weight:500}
+.ls .who{color:var(--muted);font-size:15px;margin-top:6px}
+.ls .loc{color:#555A62;font-size:15px;margin-top:4px;display:flex;align-items:center;gap:6px}
+.ls .loc svg{width:17px;height:17px}
+.ls.mine .bar{background:var(--orange)}
+.empty{text-align:center;color:var(--muted);padding:36px 0}
+.fab{position:fixed;right:18px;bottom:calc(100px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:20px;background:var(--blue2);color:var(--blue);box-shadow:0 6px 18px rgba(31,111,235,.25);display:none;place-items:center;z-index:4}
+.fab svg{width:30px;height:30px}
+body.sch .fab{display:grid}
+/* profile */
+.prof{display:flex;flex-direction:column;align-items:center;padding:16px 0 8px}
+.ava{width:92px;height:92px;border-radius:50%;background:var(--blue2);color:var(--blue);display:grid;place-items:center;font-size:32px;font-weight:600}
+.prof h3{margin:12px 0 2px;font-size:21px}
+.prof .meta{color:var(--muted)}
+.list{border:1px solid var(--line);border-radius:16px;margin-top:16px;overflow:hidden}
+.list .it{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:#fff}
 .list .it:last-child{border-bottom:0}
-.list .it span:last-child{color:var(--muted)}
-.tabs{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:5}
-.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:#8A96AB;padding:4px 0}
-.tabs svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tabs button.on{color:var(--navy)}
-.sheet-bg{position:fixed;inset:0;background:rgba(10,20,40,.4);display:none;z-index:10}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-height:85vh;overflow:auto;background:var(--bg);border-radius:22px 22px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .25s;z-index:11}
-.sheet.on{transform:none}.sheet-bg.on{display:block}
-.grab{width:40px;height:5px;border-radius:3px;background:#C9D2E0;margin:0 auto 10px}
-.sheet h2{margin-top:6px}
-.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
-.row2:last-child{border-bottom:0}
-.score{font-weight:700;color:var(--navy)}
-.bar{height:6px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--navy)}
-input.name{font:inherit;font-size:20px;font-weight:700;text-align:center;border:1px solid var(--line);border-radius:12px;padding:8px;width:100%}
+.list .it span:last-child{color:var(--muted);text-align:right}
+.hello{display:flex;align-items:center;justify-content:space-between;background:#F4F5F7;padding:calc(env(safe-area-inset-top) + 18px) 20px 18px;margin-bottom:14px}
+.hello #hi{font-size:18px;font-weight:500}
+.bell{position:relative;width:32px;height:32px;display:grid;place-items:center}
+.bell i{position:absolute;top:0;right:0;min-width:15px;height:15px;border-radius:8px;background:#E5322D;color:#fff;font-size:10px;font-style:normal;font-weight:700;display:grid;place-items:center}
+.ptitle{text-align:center;font-size:20px;padding:calc(env(safe-area-inset-top) + 16px) 0 8px}
+.sec{font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#555A62;margin:22px 4px 8px}
+#p-profile .list{margin-top:0}
+#p-profile .it{align-items:center;gap:14px;text-decoration:none;color:inherit;padding:14px 16px}
+#p-profile .it svg{flex:none;width:22px;height:22px;color:#3A3F47}
+#p-profile .lb{flex:1;color:var(--text)!important;text-align:left!important;font-size:16px}
+#p-profile .lb small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+#p-profile .lb small.lnk{color:var(--blue);text-decoration:underline}
+#p-profile .ch{font-size:22px;color:#3A3F47!important}
+#p-profile .red .lb,#p-profile .red svg{color:#E5322D!important}
+.sw{position:relative;width:52px;height:32px;flex:none}.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;border-radius:16px;background:#CDD1D8;transition:.2s}
+.sw span:before{content:"";position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s}
+.sw input:checked+span{background:var(--blue)}.sw input:checked+span:before{transform:translateX(20px)}
+.ver{text-align:center;color:var(--muted);font-size:14px;margin:24px 0 12px}
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;padding:10px 0 calc(8px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13.5px;font-weight:500;color:#5B6068}
+.tabs .pill{width:64px;height:34px;border-radius:17px;display:grid;place-items:center}
+.tabs button.on{color:var(--blue)}.tabs button.on .pill{background:var(--blue2);color:#111}
+/* sheet */
+.sbg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:10}.sbg.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .25s;z-index:11}
+.sheet.on{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:#D5D8DE;margin:0 auto 6px}
+.sheet h2{margin:12px 0 14px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}
+.row span:last-child{color:var(--muted);text-align:right}
+.btn{display:block;width:100%;background:var(--blue);color:#fff;border-radius:14px;padding:14px;font-weight:600;margin-top:14px;text-align:center}
+.inp{width:100%;font:inherit;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;background:var(--card)}
+.two{display:flex;gap:10px}.two .inp{flex:1}
+.note{color:var(--muted);font-size:14px}
 </style></head>
 <body>
-<header class="top">
-  <div class="row"><img src="icon-180.png" alt=""><div><h1 id="title">My KNUS</h1><div class="sub" id="hello"></div></div></div>
-</header>
-<main>
-  <section class="page on" id="p-home">
-    <div class="card next" id="next"></div>
+<section class="page on" id="p-home">
+  <div class="hello"><button id="hi" data-open="edit"></button><button class="bell" data-open="notif" aria-label="Notifications"><svg class="i" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></svg><i>1</i></button></div>
+  <main>
+    <div class="today" id="today"></div>
+    <h2>Services</h2>
     <div class="grid" id="tiles"></div>
-    <h2>News</h2>
-    <div class="news" id="news"></div>
-  </section>
-  <section class="page" id="p-schedule">
-    <div class="weekbar"><button id="prevW" aria-label="Previous week">‹</button><div id="weekLbl"></div><button id="nextW" aria-label="Next week">›</button></div>
-    <div class="days" id="days"></div>
-    <div class="lessons" id="lessons"></div>
-  </section>
-  <section class="page" id="p-profile">
-    <div class="card prof">
-      <div class="ava" id="ava"></div>
-      <h3 id="pName"></h3>
-      <div class="meta" id="pGroup"></div>
-      <div style="margin-top:8px"><span class="pill">Student</span></div>
+  </main>
+</section>
+
+<section class="page" id="p-schedule">
+  <div class="head"><h1>Schedule</h1><button id="share" aria-label="Share"><svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg></button></div>
+  <div class="cal">
+    <div class="calbar">
+      <button class="arr" id="prev" aria-label="Previous"><svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="t" id="mlabel"></div>
+      <button class="mode" id="mode">Week</button>
+      <button class="arr" id="next" aria-label="Next"><svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
-    <div class="stats">
-      <div class="card"><b>3.41</b><span class="meta">GPA</span></div>
-      <div class="card"><b>94%</b><span class="meta">Attendance</span></div>
-      <div class="card"><b>30</b><span class="meta">Credits</span></div>
+    <div class="wd"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+    <div class="dates" id="dates"></div>
+  </div>
+  <div class="lessons" id="lessons"></div>
+</section>
+
+<section class="page" id="p-profile">
+  <div class="ptitle">Profile</div>
+  <main>
+    <div class="sec">Academic info</div>
+    <div class="list">
+      <button class="it" data-open="gpa"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg><span class="lb">GPA</span><span class="ch">›</span></button>
+      <button class="it" data-open="grade"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 16v-4M12 16V8M16 16v-6"/></svg><span class="lb">Grades</span><span class="ch">›</span></button>
+      <button class="it" data-open="trans"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg><span class="lb">Transcript</span><span class="ch">›</span></button>
+      <button class="it" data-open="iup"><svg class="i" viewBox="0 0 24 24"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1zM12 6v14"/></svg><span class="lb">Curriculum (IUP)</span><span class="ch">›</span></button>
+      <button class="it" data-open="sch"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="7" y="9" width="10" height="6" rx="1"/></svg><span class="lb">Scholarship</span><span class="ch">›</span></button>
     </div>
-    <div class="card list" id="info"></div>
-    <div class="card list">
-      <button class="it" data-open="edit"><span>Edit name</span><span>›</span></button>
-      <button class="it" data-open="lang"><span>Language</span><span>English</span></button>
-      <button class="it" data-open="about"><span>About app</span><span>›</span></button>
+    <div class="sec">Language</div>
+    <div class="list"><button class="it" data-open="lang"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="lb">Language<small>System default</small></span><span class="ch">›</span></button></div>
+    <div class="sec">Security</div>
+    <div class="list">
+      <button class="it" data-open="pin"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10v4M10 10h2v2h-2v2h2M15 10h2v4h-2M15 12h2"/></svg><span class="lb">Change PIN</span><span class="ch">›</span></button>
+      <div class="it"><svg class="i" viewBox="0 0 24 24"><path d="M12 11v3a8 8 0 0 1-1.5 4.5M8 9.5a4 4 0 0 1 8 1.5v2M16 16a14 14 0 0 1-1 4M5 8a8 8 0 0 1 14 0M4.5 13c.3-1 .5-2 .5-3M19 13v-1"/></svg><span class="lb">Biometric Lock<small>Require Face ID or fingerprint to open the app</small></span><label class="sw"><input type="checkbox" id="bio" checked><span></span></label></div>
     </div>
-  </section>
-</main>
+    <div class="sec">Account</div>
+    <div class="list">
+      <button class="it" data-open="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg><span class="lb">Help &amp; Support</span><span class="ch">›</span></button>
+      <button class="it" data-open="edit"><svg class="i" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg><span class="lb">Sign Out</span><span class="ch">›</span></button>
+      <button class="it red" data-open="del"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span class="lb">Delete Account</span><span class="ch">›</span></button>
+      <a class="it" href="mailto:Support@knus.edu.kz"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="lb">Technical Support<small class="lnk">Support@knus.edu.kz</small></span><span class="ch">›</span></a>
+    </div>
+    <div class="ver">My KNUS v1.0.21 (1)</div>
+  </main>
+</section>
+
+<button class="fab" id="fab" aria-label="Add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <nav class="tabs">
-  <button data-tab="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-  <button data-tab="schedule"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>Schedule</button>
-  <button data-tab="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Profile</button>
+  <button data-tab="home" class="on"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></svg></span>Home</button>
+  <button data-tab="schedule"><span class="pill"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/></svg></span>Schedule</button>
+  <button data-tab="profile"><span class="pill"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6z"/></svg></span>Profile</button>
 </nav>
 
-<div class="sheet-bg" id="sbg"></div>
+<div class="sbg" id="sbg"></div>
 <div class="sheet" id="sheet"><div class="grab"></div><div id="sbody"></div></div>
 
 <script>
 const $=s=>document.querySelector(s);
 const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-// Basic first-year courses of a sports university. Pairs run 08:00-14:00.
-const SLOTS=[["08:00","09:20"],["09:30","10:50"],["11:00","12:20"],["12:40","14:00"]];
-const C={
-  hist:{n:"History of Kazakhstan",t:"Akhmetova A.S."},
-  kaz:{n:"Kazakh Language",t:"Seitkali G.M."},
-  eng:{n:"English for Sport",t:"Ivanova O.P."},
-  phil:{n:"Philosophy",t:"Kenzhebayev N.T."},
-  anat:{n:"Human Anatomy",t:"Bekova D.K."},
-  phys:{n:"Physiology of Sport",t:"Omarov B.Zh."},
-  tmpe:{n:"Theory & Methods of Physical Education",t:"Sarsenbayev E.A."},
-  psy:{n:"Sport Psychology",t:"Nurlanova A.B."},
-  bio:{n:"Biomechanics",t:"Tulegenov M.S."},
-  ict:{n:"ICT",t:"Zhakupova L.R."},
-  ath:{n:"Athletics",t:"Dzhaksybekov R.N."},
-  swim:{n:"Swimming",t:"Lee V.A."}
+// Basic first-year courses of the KNUS college. Every day ends by 14:00.
+const S={
+  coach:["Введение в тренерскую деятельность","Шерхан Мадина Ерболатовна","blue"],
+  econ:["Основы экономики и предпринимательства","Утарбаева Гульнара Кыдыргалиевна","green"],
+  anat:["Возрастная анатомия и физиология","Тыкежанова Г","blue"],
+  hist:["История избранного вида спорта","Сейткали Ж.М.","blue"],
+  kaz:["Казахский язык","Ахметова А.С.","green"],
+  eng:["Английский язык","Иванова О.П.","green"],
+  hkz:["История Казахстана","Кенжебаев Н.Т.","blue"],
+  tmfv:["Теория и методика физического воспитания","Сарсенбаев Е.А.","blue"],
+  ped:["Педагогика","Нурланова А.Б.","green"],
+  inf:["Информатика","Жакупова Л.Р.","green"],
+  fk:["Физическая культура","Джаксыбеков Р.Н.","blue"]
 };
-// [course, type, room] per slot; null = free
+// [subject, from, to, room]; index 0 = Monday
 const WEEK=[
-  [["hist","Lecture","A-204"],["anat","Lecture","B-112"],["anat","Practice","Lab 3"],["eng","Practice","A-310"]],
-  [["tmpe","Lecture","A-101"],["kaz","Practice","A-215"],["ath","Practice","Stadium"],null],
-  [["phys","Lecture","B-112"],["phil","Lecture","A-204"],["ict","Practice","IT-2"],["eng","Practice","A-310"]],
-  [["psy","Lecture","A-118"],["bio","Lecture","B-205"],["swim","Practice","Pool"],null],
-  [["tmpe","Practice","Gym 1"],["phys","Practice","Lab 5"],["kaz","Practice","A-215"],["hist","Seminar","A-204"]],
-  [["ath","Practice","Stadium"],["bio","Practice","Lab 2"],null,null]
+  [["econ","09:00","09:50","B-02 113"],["anat","11:00","11:50","B-04 221"],["hist","12:00","12:50","B-04 221"]],
+  [["coach","09:00","09:50","B-04 221"],["coach","10:00","10:50","B-02 113"]],
+  [["hkz","09:00","09:50","B-03 204"],["tmfv","10:00","10:50","B-04 215"],["eng","12:00","12:50","B-02 117"]],
+  [["anat","09:00","09:50","B-04 221"],["ped","11:00","11:50","B-03 118"],["inf","13:00","13:50","B-01 IT-2"]],
+  [["kaz","10:00","10:50","B-02 108"],["fk","12:00","13:50","Спортзал 1"]],
+  [],[]
 ];
-const DN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-let name=store.get("knus-name","Student");
-const GROUP="PE-25-01 · 1st year";
-const FACULTY="Faculty of Physical Education";
-
-function monday(d){const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
-const today=new Date();let wk=monday(today);let sel=Math.min((today.getDay()+6)%7,5);
+const MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const wdi=d=>(d.getDay()+6)%7;
 const mins=s=>{const[h,m]=s.split(":");return h*60+ +m};
-
-function lessonsOf(i){return (WEEK[i]||[]).map((l,j)=>l&&{c:C[l[0]],type:l[1],room:l[2],from:SLOTS[j][0],to:SLOTS[j][1]}).filter(Boolean)}
-
-function renderHome(){
-  const h=today.getHours();
-  $("#hello").textContent=(h<12?"Good morning, ":h<18?"Good afternoon, ":"Good evening, ")+name.split(" ")[0];
-  const di=(today.getDay()+6)%7, now=today.getHours()*60+today.getMinutes();
-  let lbl="Next lesson",L=lessonsOf(di).find(l=>mins(l.to)>now);
-  if(L&&mins(L.from)<=now)lbl="Now";
-  if(!L){for(let k=1;k<=7&&!L;k++){const d=(di+k)%7;L=lessonsOf(d)[0];if(L)lbl=k===1?"Tomorrow":DN[d]}}
-  $("#next").innerHTML=L?`<div class="label">${lbl}</div><h3>${L.c.n}</h3><div class="meta">${L.from}–${L.to} · ${L.room} · ${L.c.t}</div><div style="margin-top:8px"><span class="pill">${L.type}</span></div>`:`<div class="label">Today</div><h3>No lessons</h3>`;
+let mine=store.get("knus-events",[]); // own events added with +
+function dayLessons(d){
+  const base=WEEK[wdi(d)].map(l=>({t:S[l[0]][0],who:S[l[0]][1],c:S[l[0]][2],from:l[1],to:l[2],loc:l[3]+", КНУС  колледж"}));
+  const own=mine.filter(e=>e.date===iso(d)).map(e=>({t:e.t,who:"My event",c:"orange",from:e.from,to:e.to,loc:e.loc,mine:1}));
+  return base.concat(own).sort((a,b)=>mins(a.from)-mins(b.from));
 }
 
-const I={
-  cal:'<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
-  grade:'<path d="M4 4h16v16H4z"/><path d="M8 15l2.5-6 2.5 6M9 13h3M15 9v6M13 12h4"/>',
+// ---- Home
+const IC={
+  req:'<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z" fill="currentColor" fill-opacity=".25"/><path d="M12 3v18M5 11h14"/>',
+  qr:'<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="7" width="4" height="4"/><rect x="7" y="13" width="4" height="4"/><path d="M14 14h1v1M16 16h1v1"/>',
+  lib:'<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z" fill="currentColor" fill-opacity=".9"/><path d="M14.5 9h4M14.5 12h4M14.5 15h4" stroke="#fff"/>',
+  rmeb:'<path d="M3 6c3-1 6-1 8.5 1v12C9 17 6 17 3 18zM12.5 7c2.5-2 5.5-2 8.5-1v12c-3-1-6-1-8.5 1z"/><path d="M16 4v6l1.5-1 1.5 1V4"/>',
+  room:'<path d="M5 21V4h10v17M15 6h4v15M3 21h18"/><path d="M11 12h.01"/>',
+  exc:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M9.5 12.5l5 5M14.5 12.5l-5 5"/>',
+  dorm:'<path d="M4 21V9h5V4h7v17M16 11h4v10M3 21h18"/><path d="M7 12h1M7 15h1M7 18h1M11 7h1M11 10h1M13 7h1M13 10h1M11 13h1M13 13h1M11 16h1M13 16h1"/>',
+  rev:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21l3-4M7 13l5-5 2 2-5 5H7zM14 13h3"/>',
+  tick:'<path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4z"/><path d="M12 7v2M12 11v2M12 15v2"/>',
+  psy:'<path d="M9 21v-3H6v-4l-2-1 2-3c0-4 3-7 7-7s7 3 7 7c0 2.5-1 4-3 5.5V21"/><circle cx="13" cy="10" r="2.5"/><path d="M13 6.5v1M13 12.5v1M16.5 10h-1M10.5 10h-1"/>',
+  ai:'<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 16h4M3 12v3M21 12v3"/><circle cx="12" cy="4" r="1"/>',
+  wifi:'<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/>',
+  grade:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   att:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-  exam:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
-  lib:'<path d="M4 19V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2zM8 7h6"/>',
-  pay:'<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6 15h4"/>',
-  doc:'<path d="M9 3h6l1 2h3v16H5V5h3z"/><path d="M9 11h6M9 15h6"/>',
-  map:'<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
-  sport:'<circle cx="12" cy="12" r="9"/><path d="M3.5 9.5c5 1 12 1 17 0M3.5 14.5c5-1 12-1 17 0M12 3c-3 5-3 13 0 18"/>'
+  pay:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>'
 };
-const TILES=[["cal","Schedule","schedule"],["grade","Grades","grades"],["att","Attendance","att"],["exam","Exams","exams"],["lib","Library","lib"],["pay","Payments","pay"],["doc","Certificates","doc"],["sport","Sport sections","sport"],["map","Campus","map"]];
-$("#tiles").innerHTML=TILES.map(t=>`<button class="tile" data-open="${t[2]}"><span class="ic"><svg viewBox="0 0 24 24">${I[t[0]]}</svg></span>${t[1]}</button>`).join("");
+const TILES=[["req","My Requests","o"],["qr","QR Scan","b"],["lib","Library","o"],["rmeb","RMEB catalogue","o"],["room","Book a Room","b"],["exc","Class exemptions","o"],["dorm","Dormitory","g"],["rev","Teacher review","g"],["tick","Service Center ticket","b"],["psy","My psychologist","b"],["ai","AI Assistant","g"],["wifi","Campus WiFi","b"],["grade","Grades","o"],["att","Attendance","b"],["pay","Payments","g"]];
+$("#tiles").innerHTML=TILES.map(t=>`<button class="tile" data-open="${t[0]}"><svg class="i ${t[2]}" viewBox="0 0 24 24">${IC[t[0]]}</svg>${t[1]}</button>`).join("");
 
-const NEWS=[["Registration for sport sections is open","Football, volleyball, judo and swimming. Sign up at the sports office."],["Midterm week starts soon","Check the Exams section for your timetable."],["Library hours extended","Open until 20:00 on weekdays."]];
-$("#news").innerHTML=NEWS.map(n=>`<div class="card"><span class="dot"></span><div><b>${n[0]}</b><div class="meta">${n[1]}</div></div></div>`).join("");
-
-function renderSchedule(){
-  const end=new Date(wk);end.setDate(end.getDate()+5);
-  $("#weekLbl").textContent=`${wk.getDate()} ${MN[wk.getMonth()]} – ${end.getDate()} ${MN[end.getMonth()]}`;
-  const t0=monday(today).getTime()===wk.getTime(), ti=(today.getDay()+6)%7;
-  $("#days").innerHTML=DN.slice(0,6).map((d,i)=>{const x=new Date(wk);x.setDate(x.getDate()+i);return `<button class="day${i===sel?" on":""}${t0&&i===ti?" today":""}" data-d="${i}"><span>${d}</span><b>${x.getDate()}</b></button>`}).join("");
-  const now=today.getHours()*60+today.getMinutes(),isToday=t0&&sel===ti;
-  const L=lessonsOf(sel);
-  $("#lessons").innerHTML=L.length?L.map(l=>`<div class="lesson${l.type==="Lecture"?" lec":""}${isToday&&mins(l.from)<=now&&now<mins(l.to)?" now":""}"><div class="time">${l.from}<span>${l.to}</span></div><div><h4>${l.c.n}</h4><div class="meta">${l.room} · ${l.c.t}</div><div style="margin-top:6px"><span class="pill">${l.type}</span></div></div></div>`).join(""):`<div class="empty">No lessons 🎉</div>`;
+function renderToday(){
+  const now=new Date(),m=now.getHours()*60+now.getMinutes();
+  const L=dayLessons(now).find(l=>mins(l.to)>m);
+  const cal='<svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M9 14.5l2 2 4-4"/></svg>';
+  $("#today").innerHTML=L?`${cal}<div><span>${mins(L.from)<=m?"Now":"Next class"} · ${L.from}–${L.to}</span><b>${esc(L.t)}</b><span>${esc(L.loc)}</span></div>`:`${cal}<div><b>No more classes today</b></div>`;
+  $("#today").onclick=()=>go("schedule");
 }
-$("#days").onclick=e=>{const b=e.target.closest(".day");if(b){sel=+b.dataset.d;renderSchedule()}};
-$("#prevW").onclick=()=>{wk.setDate(wk.getDate()-7);renderSchedule()};
-$("#nextW").onclick=()=>{wk.setDate(wk.getDate()+7);renderSchedule()};
 
+// ---- Schedule
+const today=new Date();today.setHours(0,0,0,0);
+let sel=new Date(today),view=new Date(today.getFullYear(),today.getMonth(),1),week=false;
+function monday(d){const x=new Date(d);x.setDate(x.getDate()-wdi(x));return x}
+function renderCal(){
+  let cells=[];
+  if(week){const s=monday(sel);for(let i=0;i<7;i++){const d=new Date(s);d.setDate(s.getDate()+i);cells.push(d)}$("#mlabel").textContent=`${MN[sel.getMonth()]} ${sel.getFullYear()}`}
+  else{const first=new Date(view);for(let i=0;i<wdi(first);i++)cells.push(null);const n=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();for(let i=1;i<=n;i++)cells.push(new Date(view.getFullYear(),view.getMonth(),i));$("#mlabel").textContent=`${MN[view.getMonth()]} ${view.getFullYear()}`}
+  $("#mode").textContent=week?"Month":"Week";
+  $("#dates").innerHTML=cells.map(d=>{if(!d)return `<button class="out"></button>`;const k=dayLessons(d).length;
+    return `<button data-d="${iso(d)}" class="${iso(d)===iso(sel)?"sel":iso(d)===iso(today)?"td":""}"><span class="n">${d.getDate()}</span><span class="dots">${"<i></i>".repeat(Math.min(k,3))}</span></button>`}).join("");
+  renderLessons();
+}
+function renderLessons(){
+  const L=dayLessons(sel);
+  const pin='<svg class="i" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.8-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.2-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
+  const col={green:"var(--green)",blue:"var(--blue)",orange:"var(--orange)"};
+  $("#lessons").innerHTML=L.length?L.map((l,i)=>`<div class="ls${l.mine?" mine":""}"><span class="bar" style="background:${col[l.c]}"></span><div class="body"><div class="top"><h4>${esc(l.t)}</h4><span class="tm">${l.from}–${l.to}</span></div><div class="who">${esc(l.who)}</div>${l.loc?`<div class="loc">${pin}${esc(l.loc)}</div>`:""}</div></div>`).join(""):`<div class="empty">No classes</div>`;
+}
+$("#dates").onclick=e=>{const b=e.target.closest("[data-d]");if(!b)return;const[y,m,d]=b.dataset.d.split("-");sel=new Date(y,m-1,d);renderCal()};
+$("#prev").onclick=()=>{if(week){sel.setDate(sel.getDate()-7)}else view.setMonth(view.getMonth()-1);renderCal()};
+$("#next").onclick=()=>{if(week){sel.setDate(sel.getDate()+7)}else view.setMonth(view.getMonth()+1);renderCal()};
+$("#mode").onclick=()=>{week=!week;if(!week)view=new Date(sel.getFullYear(),sel.getMonth(),1);renderCal()};
+$("#share").onclick=async()=>{
+  const txt=`${sel.toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"})}\n`+dayLessons(sel).map(l=>`${l.from}–${l.to} ${l.t} (${l.loc})`).join("\n");
+  try{if(navigator.share)await navigator.share({title:"Schedule",text:txt});else{await navigator.clipboard.writeText(txt);alert("Copied")}}catch(e){}
+};
+
+// ---- Profile
+let name=store.get("knus-name","Ансар");
 function renderProfile(){
-  $("#pName").textContent=name;
-  $("#ava").textContent=name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-  $("#pGroup").textContent=GROUP;
-  $("#info").innerHTML=[["Student ID","250103417"],["Faculty",FACULTY],["Specialty","Physical Culture & Sport"],["Group","PE-25-01"],["Year","1st"],["Advisor","Sarsenbayev E.A."]].map(r=>`<div class="it"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("");
+  const h=new Date().getHours();
+  $("#hi").textContent=(h<12?"Good morning, ":h<18?"Good afternoon, ":"Good evening, ")+name;
 }
 
-const GRADES=[["hist",88],["kaz",92],["eng",81],["phil",76],["anat",84],["phys",79],["tmpe",95],["psy",87],["bio",73],["ict",90],["ath",97],["swim",93]];
-const letter=s=>s>=95?"A":s>=90?"A-":s>=85?"B+":s>=80?"B":s>=75?"B-":s>=70?"C+":"C";
-const SHEETS={
-  grades:()=>`<h2>Grades</h2><div class="card">${GRADES.map(g=>`<div class="row2"><div style="flex:1"><div>${C[g[0]].n}</div><div class="bar"><i style="width:${g[1]}%"></i></div></div><span class="score">${g[1]} · ${letter(g[1])}</span></div>`).join("")}</div>`,
-  att:()=>`<h2>Attendance</h2><div class="card">${GRADES.map((g,i)=>{const p=[100,96,88,92,100,90,100,94,85,100,100,95][i];return `<div class="row2"><span>${C[g[0]].n}</span><span class="score" style="color:${p>=90?"var(--ok)":"var(--warn)"}">${p}%</span></div>`}).join("")}</div>`,
-  exams:()=>`<h2>Exams</h2><div class="card">${[["anat","Midterm","27 Oct, 09:30","B-112"],["hist","Midterm","28 Oct, 08:00","A-204"],["tmpe","Midterm","30 Oct, 11:00","A-101"],["eng","Midterm","31 Oct, 09:30","A-310"]].map(e=>`<div class="row2"><div><div>${C[e[0]].n}</div><div class="meta">${e[1]} · ${e[3]}</div></div><span class="score">${e[2]}</span></div>`).join("")}</div>`,
-  lib:()=>`<h2>Library</h2><div class="card"><div class="row2"><span>Fundamentals of Human Anatomy</span><span class="meta">due 20 Oct</span></div><div class="row2"><span>Theory of Physical Education</span><span class="meta">due 2 Nov</span></div></div><p class="meta">Open Mon–Fri 09:00–20:00, Sat 10:00–16:00.</p>`,
-  pay:()=>`<h2>Payments</h2><div class="card"><div class="row2"><span>Tuition, fall semester</span><span class="score" style="color:var(--ok)">Paid</span></div><div class="row2"><span>Dormitory, October</span><span class="score" style="color:var(--ok)">Paid</span></div><div class="row2"><span>Dormitory, November</span><span class="score" style="color:var(--warn)">Due 1 Nov</span></div></div>`,
-  doc:()=>`<h2>Certificates</h2><div class="card"><div class="row2"><span>Certificate of enrollment</span><span class="pill">Order</span></div><div class="row2"><span>Transcript</span><span class="pill">Order</span></div><div class="row2"><span>Certificate for military office</span><span class="pill">Order</span></div></div>`,
-  sport:()=>`<h2>Sport sections</h2><div class="card">${[["Football","Mon, Wed 15:00"],["Volleyball","Tue, Thu 15:00"],["Judo","Mon, Fri 16:00"],["Swimming","Tue, Sat 14:30"],["Athletics","Wed, Fri 15:30"]].map(s=>`<div class="row2"><span>${s[0]}</span><span class="meta">${s[1]}</span></div>`).join("")}</div>`,
-  map:()=>`<h2>Campus</h2><div class="card"><div class="row2"><span>Building A</span><span class="meta">Lectures, dean's office</span></div><div class="row2"><span>Building B</span><span class="meta">Labs</span></div><div class="row2"><span>Stadium</span><span class="meta">Athletics</span></div><div class="row2"><span>Pool</span><span class="meta">Swimming</span></div><div class="row2"><span>Gym 1</span><span class="meta">Practice classes</span></div></div>`,
-  edit:()=>`<h2>Your name</h2><input class="name" id="nm" value="${name.replace(/"/g,"&quot;")}"><p></p><button class="tile" style="width:100%;flex-direction:row;justify-content:center;background:var(--navy);color:#fff;padding:14px" id="save">Save</button>`,
-  lang:()=>`<h2>Language</h2><div class="card"><div class="row2"><span>English</span><span>✓</span></div><div class="row2 meta"><span>Қазақша</span><span>soon</span></div><div class="row2 meta"><span>Русский</span><span>soon</span></div></div>`,
-  about:()=>`<h2>My KNUS</h2><p class="meta">Student app of the Kazakh National University of Sports. Add it to your Home Screen from Safari: Share → Add to Home Screen.</p>`
+// ---- Sheets
+const rows=a=>a.map(r=>`<div class="row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("");
+const SH={
+  req:()=>`<h2>My Requests</h2>${rows([["Справка с места учёбы","Готово"],["Справка в военкомат","В обработке"]])}<button class="btn" data-close>New request</button>`,
+  qr:()=>`<h2>QR Scan</h2><p class="note">Отсканируйте QR-код в аудитории камерой iPhone, чтобы отметиться на паре.</p>`,
+  lib:()=>`<h2>Library</h2>${rows([["Возрастная анатомия","до 20 окт"],["Основы экономики","до 2 ноя"]])}<p class="note">Пн–Пт 09:00–18:00</p>`,
+  rmeb:()=>`<h2>RMEB catalogue</h2><p class="note">Республиканская межвузовская электронная библиотека.</p><a class="btn" href="https://rmebrk.kz" target="_blank" rel="noopener" style="text-decoration:none">Open rmebrk.kz</a>`,
+  room:()=>`<h2>Book a Room</h2>${rows([["B-02 113","свободна 14:00–18:00"],["B-04 221","свободна 14:00–17:00"],["Спортзал 2","свободен 15:00–19:00"]])}`,
+  exc:()=>`<h2>Class exemptions</h2><p class="note">Нет активных освобождений.</p><button class="btn" data-close>Upload certificate</button>`,
+  dorm:()=>`<h2>Dormitory</h2>${rows([["Общежитие","№1"],["Комната","312"],["Оплата за октябрь","Оплачено"]])}`,
+  rev:()=>`<h2>Teacher review</h2>${rows(Object.values(S).slice(0,4).map(s=>[s[1],"Оценить"]))}`,
+  tick:()=>`<h2>Service Center ticket</h2><p class="note">Электронная очередь в ЦОС.</p><button class="btn" id="tk">Get ticket</button><div id="tkn" style="text-align:center;font-size:40px;font-weight:700;margin-top:16px"></div>`,
+  psy:()=>`<h2>My psychologist</h2>${rows([["Психолог","Нурланова А.Б."],["Кабинет","B-03 105"],["Приём","Пн–Пт 14:00–17:00"]])}`,
+  ai:()=>`<h2>AI Assistant</h2><p class="note">Скоро здесь можно будет задать вопрос про учёбу и расписание.</p>`,
+  wifi:()=>`<h2>Campus WiFi</h2>${rows([["Сеть","KNUS-Student"],["Логин","ваш Student ID"],["Пароль","как в портале"]])}`,
+  grade:()=>`<h2>Grades</h2>${rows(Object.values(S).map((s,i)=>[s[0],[88,92,81,76,95,84,90,87,73,97][i]]))}`,
+  att:()=>`<h2>Attendance</h2>${rows(Object.values(S).map((s,i)=>[s[0],[100,96,88,92,100,90,100,94,85,100][i]+"%"]))}`,
+  pay:()=>`<h2>Payments</h2>${rows([["Обучение, осень","Оплачено"],["Общежитие, ноябрь","до 1 ноя"]])}`,
+  notif:()=>`<h2>Notifications</h2>${rows([["Регистрация в спортивные секции открыта","сегодня"]])}`,
+  gpa:()=>`<h2>GPA</h2>${rows([["Текущий GPA","3.41"],["Кредиты","30"]])}`,
+  trans:()=>`<h2>Transcript</h2>${rows(Object.values(S).map((s,i)=>[s[0],["A","A-","B+","B","B-","A","B+","A-","B","C+","A"][i]]))}`,
+  iup:()=>`<h2>Curriculum (IUP)</h2>${rows(Object.values(S).map(s=>[s[0],"3 кр."]))}`,
+  sch:()=>`<h2>Scholarship</h2>${rows([["Государственная стипендия","Назначена"],["Сумма","45 000 ₸"]])}`,
+  pin:()=>`<h2>Change PIN</h2><input class="inp" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN"><button class="btn" data-close>Save</button>`,
+  help:()=>`<h2>Help &amp; Support</h2><p class="note">Вопросы по приложению: Support@knus.edu.kz</p>`,
+  del:()=>`<h2>Delete Account</h2><p class="note">Обратитесь в Service Center, чтобы удалить аккаунт.</p>`,
+  edit:()=>`<h2>Your name</h2><input class="inp" id="nm" value="${esc(name)}"><button class="btn" id="saveN">Save</button>`,
+  lang:()=>`<h2>Language</h2>${rows([["System default","✓"],["English",""],["Қазақша",""],["Русский",""]])}`,
+  about:()=>`<h2>My KNUS</h2><p class="note">Kazakh National University of Sports. Установка: Safari → Поделиться → На экран «Домой».</p>`,
+  add:()=>`<h2>New event</h2><input class="inp" id="eT" placeholder="Title"><div class="two"><input class="inp" id="eF" type="time" value="14:00"><input class="inp" id="eTo" type="time" value="15:00"></div><input class="inp" id="eL" placeholder="Location"><button class="btn" id="saveE">Add to ${sel.getDate()} ${MN[sel.getMonth()]}</button>${mine.some(e=>e.date===iso(sel))?`<button class="btn" id="clrE" style="background:var(--card);color:var(--text)">Delete my events this day</button>`:""}`
 };
-function openSheet(k){
-  if(k==="schedule"){go("schedule");return}
-  if(!SHEETS[k])return;
-  $("#sbody").innerHTML=SHEETS[k]();$("#sheet").classList.add("on");$("#sbg").classList.add("on");
-  if(k==="edit"){$("#save").onclick=()=>{const v=$("#nm").value.trim();if(v){name=v;store.set("knus-name",v);renderHome();renderProfile()}closeSheet()}}
+function open(k){
+  if(!SH[k])return;$("#sbody").innerHTML=SH[k]();$("#sheet").classList.add("on");$("#sbg").classList.add("on");
+  if(k==="edit")$("#saveN").onclick=()=>{const v=$("#nm").value.trim();if(v){name=v;store.set("knus-name",v);renderProfile()}close()};
+  if(k==="tick")$("#tk").onclick=()=>{$("#tkn").textContent="A-"+(100+Math.floor(Math.random()*900))};
+  if(k==="add"){
+    $("#saveE").onclick=()=>{const t=$("#eT").value.trim();if(!t)return;mine.push({date:iso(sel),t,from:$("#eF").value||"14:00",to:$("#eTo").value||"15:00",loc:$("#eL").value.trim()});store.set("knus-events",mine);close();renderCal()};
+    const c=$("#clrE");if(c)c.onclick=()=>{mine=mine.filter(e=>e.date!==iso(sel));store.set("knus-events",mine);close();renderCal()};
+  }
 }
-function closeSheet(){$("#sheet").classList.remove("on");$("#sbg").classList.remove("on")}
-$("#sbg").onclick=closeSheet;
-document.addEventListener("click",e=>{const b=e.target.closest("[data-open]");if(b)openSheet(b.dataset.open)});
+function close(){$("#sheet").classList.remove("on");$("#sbg").classList.remove("on")}
+$("#sbg").onclick=close;
+document.addEventListener("click",e=>{const o=e.target.closest("[data-open]");if(o)open(o.dataset.open);if(e.target.closest("[data-close]"))close()});
+$("#fab").onclick=()=>open("add");
 
 function go(t){
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
   document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+t));
-  $("#title").textContent=t==="home"?"My KNUS":t[0].toUpperCase()+t.slice(1);
-  scrollTo(0,0);
+  document.body.classList.toggle("sch",t==="schedule");scrollTo(0,0);
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
 
-renderHome();renderSchedule();renderProfile();
+renderToday();renderCal();renderProfile();
+setInterval(renderToday,60000);
 
 if("serviceWorker" in navigator&&location.protocol==="https:"&&!location.hostname.endsWith("claude.ai")&&!location.hostname.includes("claudeusercontent")){
   navigator.serviceWorker.register("sw.js").catch(()=>{});
