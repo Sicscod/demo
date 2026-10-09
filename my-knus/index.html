@@ -85,6 +85,20 @@ body.sch .fab{display:grid}
 .sw span{position:absolute;inset:0;border-radius:16px;background:#CDD1D8;transition:.2s}
 .sw span:before{content:"";position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s}
 .sw input:checked+span{background:var(--blue)}.sw input:checked+span:before{transform:translateX(20px)}
+.pcard{background:var(--card);border-radius:20px;padding:22px 16px 20px;text-align:center;margin-top:8px}
+.pava{position:relative;display:inline-block;width:112px;height:112px;cursor:pointer}
+.pava img{width:112px;height:112px;border-radius:50%;object-fit:cover;background:var(--blue2)}
+.cam{position:absolute;right:-2px;bottom:4px;width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;border:3px solid var(--card)}
+.cam svg{width:18px;height:18px}
+.up{display:block;color:var(--blue);font-weight:500;font-size:16px;margin:12px 0 18px;cursor:pointer}
+.pcard h3{margin:0 0 6px;font-size:19px;font-weight:600;letter-spacing:.01em}
+.pm{color:var(--muted);font-size:14.5px;margin-top:3px}
+.tags{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px;margin-top:14px;font-size:14.5px}
+.tg{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9px}
+.tg i{width:7px;height:7px;border-radius:50%}
+.tg.o{background:#FBEFD9;color:var(--text)}.tg.o i{background:#F5A623}
+.tg.g{background:#DDF1E3}.tg.g i{background:#2E9B57}
+.grant{margin-top:12px;font-size:14.5px}
 .ver{text-align:center;color:var(--muted);font-size:14px;margin:24px 0 12px}
 /* tab bar */
 .tabs{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;padding:10px 0 calc(8px + env(safe-area-inset-bottom));z-index:5}
@@ -132,6 +146,20 @@ body.sch .fab{display:grid}
 <section class="page" id="p-profile">
   <div class="ptitle">Profile</div>
   <main>
+    <div class="pcard">
+      <label class="pava"><img id="ava" src="avatar.jpg" alt=""><span class="cam"><svg class="i" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z" fill="currentColor"/><circle cx="12" cy="13" r="3.3" fill="none" stroke="#1F6FEB" stroke-width="1.8"/></svg></span><input type="file" accept="image/*" id="photo" hidden></label>
+      <label class="up" for="photo">Upload photo</label>
+      <h3>Тілеш Ансар Асланұлы</h3>
+      <div class="pm">ansar.tilesh.6b11501@knus.edu.kz</div>
+      <div class="pm">Тренерская деятельность (по видам спорта)</div>
+      <div class="tags"><span>TR2604 · Course 1</span><span class="tg o"><i></i>GPA 0.00</span><span class="tg g"><i></i>Active</span></div>
+      <div class="grant">Grant</div>
+    </div>
+    <div class="sec">Personal information</div>
+    <div class="list">
+      <a class="it" href="tel:+77052145295"><svg class="i" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1z"/></svg><span class="lb">Phone<small>+7(705)214-52-95</small></span></a>
+      <div class="it"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M9 3v4h6V3M8 12h3M8 16h3"/><circle cx="15.5" cy="12" r="1.5"/><path d="M13.5 16.5c.4-1 1.1-1.5 2-1.5s1.6.5 2 1.5"/></svg><span class="lb">IIN<small>08****39</small></span></div>
+    </div>
     <div class="sec">Academic info</div>
     <div class="list">
       <button class="it" data-open="gpa"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg><span class="lb">GPA</span><span class="ch">›</span></button>
@@ -267,6 +295,8 @@ $("#share").onclick=async()=>{
 
 // ---- Profile
 let name=store.get("knus-name","Ансар");
+const savedPhoto=store.get("knus-photo",null);if(savedPhoto)$("#ava").src=savedPhoto;
+$("#photo").onchange=e=>{const f=e.target.files[0];if(!f)return;const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),k=Math.min(img.width,img.height);c.width=c.height=320;c.getContext("2d").drawImage(img,(img.width-k)/2,(img.height-k)/2,k,k,0,0,320,320);const u=c.toDataURL("image/jpeg",.85);$("#ava").src=u;store.set("knus-photo",u)};img.src=URL.createObjectURL(f)};
 function renderProfile(){
   const h=new Date().getHours();
   $("#hi").textContent=(h<12?"Good morning, ":h<18?"Good afternoon, ":"Good evening, ")+name;
@@ -291,7 +321,7 @@ const SH={
   att:()=>`<h2>Attendance</h2>${rows(Object.values(S).map((s,i)=>[s[0],[100,96,88,92,100,90,100,94,85,100][i]+"%"]))}`,
   pay:()=>`<h2>Payments</h2>${rows([["Обучение, осень","Оплачено"],["Общежитие, ноябрь","до 1 ноя"]])}`,
   notif:()=>`<h2>Notifications</h2>${rows([["Регистрация в спортивные секции открыта","сегодня"]])}`,
-  gpa:()=>`<h2>GPA</h2>${rows([["Текущий GPA","3.41"],["Кредиты","30"]])}`,
+  gpa:()=>`<h2>GPA</h2>${rows([["Текущий GPA","0.00"],["Кредиты","0"]])}<p class="note">GPA появится после первой сессии.</p>`,
   trans:()=>`<h2>Transcript</h2>${rows(Object.values(S).map((s,i)=>[s[0],["A","A-","B+","B","B-","A","B+","A-","B","C+","A"][i]]))}`,
   iup:()=>`<h2>Curriculum (IUP)</h2>${rows(Object.values(S).map(s=>[s[0],"3 кр."]))}`,
   sch:()=>`<h2>Scholarship</h2>${rows([["Государственная стипендия","Назначена"],["Сумма","45 000 ₸"]])}`,
