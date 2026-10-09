@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="My KNUS">
+<meta name="theme-color" content="#ffffff">
+<title>My KNUS</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>
+:root{--blue:#1F6FEB;--blue2:#E3EDFD;--orange:#F5A623;--green:#3BA55C;--bg:#fff;--card:#F6F7F9;--line:#E6E8EC;--text:#1B1D21;--muted:#6E737C;--navy:#16294F}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",Roboto,"Segoe UI",sans-serif}
+body{min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+svg.i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.head{display:flex;align-items:center;justify-content:space-between;padding:calc(env(safe-area-inset-top) + 18px) 22px 10px}
+.head h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.01em}
+.head .logo{display:flex;align-items:center;gap:10px}
+.head .logo img{width:34px;height:34px;border-radius:8px}
+.page{display:none}.page.on{display:block}
+main{padding:0 16px}
+.today{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:18px;padding:30px 22px;margin-top:8px}
+.today svg{flex:none;width:26px;height:26px;color:#5B6068}
+.today b{display:block;font-weight:500;font-size:17px}
+.today span{font-size:14px;color:var(--muted)}
+h2{font-size:21px;margin:30px 4px 16px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;min-height:104px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:500;text-align:center;line-height:1.25}
+.tile:active{background:#ECEEF2}
+.tile svg{width:28px;height:28px}
+.o{color:var(--orange)}.b{color:var(--blue)}.g{color:#4A4F57}
+/* schedule */
+.cal{padding:0 12px}
+.calbar{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 14px}
+.calbar .t{flex:1;text-align:center;font-size:19px}
+.calbar .arr{width:36px;height:36px;display:grid;place-items:center}
+.mode{border:1px solid var(--line);border-radius:10px;padding:5px 13px;font-size:15px;margin-right:8px}
+.wd,.dates{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.wd div{color:var(--muted);font-size:15px;padding-bottom:12px}
+.dates button{height:62px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:17px}
+.dates .n{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.dates .td .n{background:var(--blue2);color:var(--blue)}
+.dates .sel .n{background:var(--blue);color:#fff}
+.dates .out{visibility:hidden}
+.dots{display:flex;gap:2px;height:5px}.dots i{width:5px;height:5px;border-radius:50%;background:var(--blue)}
+.lessons{border-top:1px solid var(--line);padding:16px 12px 8px;display:flex;flex-direction:column;gap:12px}
+.ls{display:flex;gap:14px;border:1px solid var(--line);border-radius:16px;padding:16px 16px 16px 14px;background:#fff}
+.ls .bar{flex:none;width:4px;border-radius:2px;background:var(--blue)}
+.ls .body{flex:1;min-width:0}
+.ls .top{display:flex;justify-content:space-between;gap:10px}
+.ls h4{margin:0;font-size:16px;font-weight:600}
+.ls .tm{flex:none;font-size:15px;font-weight:500}
+.ls .who{color:var(--muted);font-size:15px;margin-top:6px}
+.ls .loc{color:#555A62;font-size:15px;margin-top:4px;display:flex;align-items:center;gap:6px}
+.ls .loc svg{width:17px;height:17px}
+.ls.mine .bar{background:var(--orange)}
+.empty{text-align:center;color:var(--muted);padding:36px 0}
+.fab{position:fixed;right:18px;bottom:calc(100px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:20px;background:var(--blue2);color:var(--blue);box-shadow:0 6px 18px rgba(31,111,235,.25);display:none;place-items:center;z-index:4}
+.fab svg{width:30px;height:30px}
+body.sch .fab{display:grid}
+/* profile */
+.prof{display:flex;flex-direction:column;align-items:center;padding:16px 0 8px}
+.ava{width:92px;height:92px;border-radius:50%;background:var(--blue2);color:var(--blue);display:grid;place-items:center;font-size:32px;font-weight:600}
+.prof h3{margin:12px 0 2px;font-size:21px}
+.prof .meta{color:var(--muted)}
+.list{border:1px solid var(--line);border-radius:16px;margin-top:16px;overflow:hidden}
+.list .it{display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left;background:#fff}
+.list .it:last-child{border-bottom:0}
+.list .it span:last-child{color:var(--muted);text-align:right}
+.hello{display:flex;align-items:center;justify-content:space-between;background:#F4F5F7;padding:calc(env(safe-area-inset-top) + 18px) 20px 18px;margin-bottom:14px}
+.hello #hi{font-size:18px;font-weight:500}
+.bell{position:relative;width:32px;height:32px;display:grid;place-items:center}
+.bell i{position:absolute;top:0;right:0;min-width:15px;height:15px;border-radius:8px;background:#E5322D;color:#fff;font-size:10px;font-style:normal;font-weight:700;display:grid;place-items:center}
+.ptitle{text-align:center;font-size:20px;padding:calc(env(safe-area-inset-top) + 16px) 0 8px}
+.sec{font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#555A62;margin:22px 4px 8px}
+#p-profile .list{margin-top:0}
+#p-profile .it{align-items:center;gap:14px;text-decoration:none;color:inherit;padding:14px 16px}
+#p-profile .it svg{flex:none;width:22px;height:22px;color:#3A3F47}
+#p-profile .lb{flex:1;color:var(--text)!important;text-align:left!important;font-size:16px}
+#p-profile .lb small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+#p-profile .lb small.lnk{color:var(--blue);text-decoration:underline}
+#p-profile .ch{font-size:22px;color:#3A3F47!important}
+#p-profile .red .lb,#p-profile .red svg{color:#E5322D!important}
+.sw{position:relative;width:52px;height:32px;flex:none}.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;border-radius:16px;background:#CDD1D8;transition:.2s}
+.sw span:before{content:"";position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s}
+.sw input:checked+span{background:var(--blue)}.sw input:checked+span:before{transform:translateX(20px)}
+.ver{text-align:center;color:var(--muted);font-size:14px;margin:24px 0 12px}
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;padding:10px 0 calc(8px + env(safe-area-inset-bottom));z-index:5}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13.5px;font-weight:500;color:#5B6068}
+.tabs .pill{width:64px;height:34px;border-radius:17px;display:grid;place-items:center}
+.tabs button.on{color:var(--blue)}.tabs button.on .pill{background:var(--blue2);color:#111}
+/* sheet */
+.sbg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:10}.sbg.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:86vh;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .25s;z-index:11}
+.sheet.on{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:#D5D8DE;margin:0 auto 6px}
+.sheet h2{margin:12px 0 14px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}.row:last-child{border-bottom:0}
+.row span:last-child{color:var(--muted);text-align:right}
+.btn{display:block;width:100%;background:var(--blue);color:#fff;border-radius:14px;padding:14px;font-weight:600;margin-top:14px;text-align:center}
+.inp{width:100%;font:inherit;border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:8px;background:var(--card)}
+.two{display:flex;gap:10px}.two .inp{flex:1}
+.note{color:var(--muted);font-size:14px}
+</style></head>
+<body>
+<section class="page on" id="p-home">
+  <div class="hello"><button id="hi" data-open="edit"></button><button class="bell" data-open="notif" aria-label="Notifications"><svg class="i" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></svg><i>1</i></button></div>
+  <main>
+    <div class="today" id="today"></div>
+    <h2>Services</h2>
+    <div class="grid" id="tiles"></div>
+  </main>
+</section>
+
+<section class="page" id="p-schedule">
+  <div class="head"><h1>Schedule</h1><button id="share" aria-label="Share"><svg class="i" viewBox="0 0 24 24" style="width:28px;height:28px"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5v10h14V11h-1"/></svg></button></div>
+  <div class="cal">
+    <div class="calbar">
+      <button class="arr" id="prev" aria-label="Previous"><svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="t" id="mlabel"></div>
+      <button class="mode" id="mode">Week</button>
+      <button class="arr" id="next" aria-label="Next"><svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
+    <div class="wd"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div></div>
+    <div class="dates" id="dates"></div>
+  </div>
+  <div class="lessons" id="lessons"></div>
+</section>
+
+<section class="page" id="p-profile">
+  <div class="ptitle">Profile</div>
+  <main>
+    <div class="sec">Academic info</div>
+    <div class="list">
+      <button class="it" data-open="gpa"><svg class="i" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg><span class="lb">GPA</span><span class="ch">›</span></button>
+      <button class="it" data-open="grade"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 16v-4M12 16V8M16 16v-6"/></svg><span class="lb">Grades</span><span class="ch">›</span></button>
+      <button class="it" data-open="trans"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg><span class="lb">Transcript</span><span class="ch">›</span></button>
+      <button class="it" data-open="iup"><svg class="i" viewBox="0 0 24 24"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1zM12 6v14"/></svg><span class="lb">Curriculum (IUP)</span><span class="ch">›</span></button>
+      <button class="it" data-open="sch"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="7" y="9" width="10" height="6" rx="1"/></svg><span class="lb">Scholarship</span><span class="ch">›</span></button>
+    </div>
+    <div class="sec">Language</div>
+    <div class="list"><button class="it" data-open="lang"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg><span class="lb">Language<small>System default</small></span><span class="ch">›</span></button></div>
+    <div class="sec">Security</div>
+    <div class="list">
+      <button class="it" data-open="pin"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10v4M10 10h2v2h-2v2h2M15 10h2v4h-2M15 12h2"/></svg><span class="lb">Change PIN</span><span class="ch">›</span></button>
+      <div class="it"><svg class="i" viewBox="0 0 24 24"><path d="M12 11v3a8 8 0 0 1-1.5 4.5M8 9.5a4 4 0 0 1 8 1.5v2M16 16a14 14 0 0 1-1 4M5 8a8 8 0 0 1 14 0M4.5 13c.3-1 .5-2 .5-3M19 13v-1"/></svg><span class="lb">Biometric Lock<small>Require Face ID or fingerprint to open the app</small></span><label class="sw"><input type="checkbox" id="bio" checked><span></span></label></div>
+    </div>
+    <div class="sec">Account</div>
+    <div class="list">
+      <button class="it" data-open="help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></svg><span class="lb">Help &amp; Support</span><span class="ch">›</span></button>
+      <button class="it" data-open="edit"><svg class="i" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg><span class="lb">Sign Out</span><span class="ch">›</span></button>
+      <button class="it red" data-open="del"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span class="lb">Delete Account</span><span class="ch">›</span></button>
+      <a class="it" href="mailto:Support@knus.edu.kz"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="lb">Technical Support<small class="lnk">Support@knus.edu.kz</small></span><span class="ch">›</span></a>
+    </div>
+    <div class="ver">My KNUS v1.0.21 (1)</div>
+  </main>
+</section>
+
+<button class="fab" id="fab" aria-label="Add"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<nav class="tabs">
+  <button data-tab="home" class="on"><span class="pill"><svg class="i" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></svg></span>Home</button>
+  <button data-tab="schedule"><span class="pill"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/></svg></span>Schedule</button>
+  <button data-tab="profile"><span class="pill"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6z"/></svg></span>Profile</button>
+</nav>
+
+<div class="sbg" id="sbg"></div>
+<div class="sheet" id="sheet"><div class="grab"></div><div id="sbody"></div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// Basic first-year courses of the KNUS college. Every day ends by 14:00.
+const S={
+  coach:["Введение в тренерскую деятельность","Шерхан Мадина Ерболатовна","blue"],
+  econ:["Основы экономики и предпринимательства","Утарбаева Гульнара Кыдыргалиевна","green"],
+  anat:["Возрастная анатомия и физиология","Тыкежанова Г","blue"],
+  hist:["История избранного вида спорта","Сейткали Ж.М.","blue"],
+  kaz:["Казахский язык","Ахметова А.С.","green"],
+  eng:["Английский язык","Иванова О.П.","green"],
+  hkz:["История Казахстана","Кенжебаев Н.Т.","blue"],
+  tmfv:["Теория и методика физического воспитания","Сарсенбаев Е.А.","blue"],
+  ped:["Педагогика","Нурланова А.Б.","green"],
+  inf:["Информатика","Жакупова Л.Р.","green"],
+  fk:["Физическая культура","Джаксыбеков Р.Н.","blue"]
+};
+// [subject, from, to, room]; index 0 = Monday
+const WEEK=[
+  [["econ","09:00","09:50","B-02 113"],["coach","10:00","10:50","B-04 221"],["anat","11:00","11:50","B-04 221"],["hist","12:00","12:50","B-04 221"],["kaz","13:00","13:50","B-02 108"]],
+  [["coach","09:00","09:50","B-04 221"],["coach","10:00","10:50","B-02 113"],["hkz","11:00","11:50","B-03 204"],["eng","12:00","12:50","B-02 117"],["fk","13:00","13:50","Спортзал 1"]],
+  [["anat","09:00","09:50","B-04 221"],["hist","10:00","10:50","B-04 221"],["tmfv","11:00","11:50","B-04 215"],["econ","12:00","12:50","B-02 113"],["ped","13:00","13:50","B-03 118"]],
+  [["hist","09:00","09:50","B-04 221"],["anat","10:00","10:50","B-04 221"],["coach","11:00","11:50","B-02 113"],["inf","12:00","12:50","B-01 IT-2"],["eng","13:00","13:50","B-02 117"]],
+  [["econ","09:00","09:50","B-02 113"],["tmfv","10:00","10:50","B-04 215"],["kaz","11:00","11:50","B-02 108"],["coach","12:00","12:50","B-04 221"],["fk","13:00","13:50","Манеж"]],
+  [],[]
+];
+const MN=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const wdi=d=>(d.getDay()+6)%7;
+const mins=s=>{const[h,m]=s.split(":");return h*60+ +m};
+let mine=store.get("knus-events",[]); // own events added with +
+function dayLessons(d){
+  const base=WEEK[wdi(d)].map(l=>({t:S[l[0]][0],who:S[l[0]][1],c:S[l[0]][2],from:l[1],to:l[2],loc:l[3]+", КНУС  колледж"}));
+  const own=mine.filter(e=>e.date===iso(d)).map(e=>({t:e.t,who:"My event",c:"orange",from:e.from,to:e.to,loc:e.loc,mine:1}));
+  return base.concat(own).sort((a,b)=>mins(a.from)-mins(b.from));
+}
+
+// ---- Home
+const IC={
+  req:'<path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6z" fill="currentColor" fill-opacity=".25"/><path d="M12 3v18M5 11h14"/>',
+  qr:'<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="7" width="4" height="4"/><rect x="7" y="13" width="4" height="4"/><path d="M14 14h1v1M16 16h1v1"/>',
+  lib:'<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z" fill="currentColor" fill-opacity=".9"/><path d="M14.5 9h4M14.5 12h4M14.5 15h4" stroke="#fff"/>',
+  rmeb:'<path d="M3 6c3-1 6-1 8.5 1v12C9 17 6 17 3 18zM12.5 7c2.5-2 5.5-2 8.5-1v12c-3-1-6-1-8.5 1z"/><path d="M16 4v6l1.5-1 1.5 1V4"/>',
+  room:'<path d="M5 21V4h10v17M15 6h4v15M3 21h18"/><path d="M11 12h.01"/>',
+  exc:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M9.5 12.5l5 5M14.5 12.5l-5 5"/>',
+  dorm:'<path d="M4 21V9h5V4h7v17M16 11h4v10M3 21h18"/><path d="M7 12h1M7 15h1M7 18h1M11 7h1M11 10h1M13 7h1M13 10h1M11 13h1M13 13h1M11 16h1M13 16h1"/>',
+  rev:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21l3-4M7 13l5-5 2 2-5 5H7zM14 13h3"/>',
+  tick:'<path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4z"/><path d="M12 7v2M12 11v2M12 15v2"/>',
+  psy:'<path d="M9 21v-3H6v-4l-2-1 2-3c0-4 3-7 7-7s7 3 7 7c0 2.5-1 4-3 5.5V21"/><circle cx="13" cy="10" r="2.5"/><path d="M13 6.5v1M13 12.5v1M16.5 10h-1M10.5 10h-1"/>',
+  ai:'<rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M10 16h4M3 12v3M21 12v3"/><circle cx="12" cy="4" r="1"/>',
+  wifi:'<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/>',
+  grade:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  att:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+  pay:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>'
+};
+const TILES=[["req","My Requests","o"],["qr","QR Scan","b"],["lib","Library","o"],["rmeb","RMEB catalogue","o"],["room","Book a Room","b"],["exc","Class exemptions","o"],["dorm","Dormitory","g"],["rev","Teacher review","g"],["tick","Service Center ticket","b"],["psy","My psychologist","b"],["ai","AI Assistant","g"],["wifi","Campus WiFi","b"],["grade","Grades","o"],["att","Attendance","b"],["pay","Payments","g"]];
+$("#tiles").innerHTML=TILES.map(t=>`<button class="tile" data-open="${t[0]}"><svg class="i ${t[2]}" viewBox="0 0 24 24">${IC[t[0]]}</svg>${t[1]}</button>`).join("");
+
+function renderToday(){
+  const now=new Date(),m=now.getHours()*60+now.getMinutes();
+  const L=dayLessons(now).find(l=>mins(l.to)>m);
+  const cal='<svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4M9 14.5l2 2 4-4"/></svg>';
+  $("#today").innerHTML=L?`${cal}<div><span>${mins(L.from)<=m?"Now":"Next class"} · ${L.from}–${L.to}</span><b>${esc(L.t)}</b><span>${esc(L.loc)}</span></div>`:`${cal}<div><b>No more classes today</b></div>`;
+  $("#today").onclick=()=>go("schedule");
+}
+
+// ---- Schedule
+const today=new Date();today.setHours(0,0,0,0);
+let sel=new Date(today),view=new Date(today.getFullYear(),today.getMonth(),1),week=false;
+function monday(d){const x=new Date(d);x.setDate(x.getDate()-wdi(x));return x}
+function renderCal(){
+  let cells=[];
+  if(week){const s=monday(sel);for(let i=0;i<7;i++){const d=new Date(s);d.setDate(s.getDate()+i);cells.push(d)}$("#mlabel").textContent=`${MN[sel.getMonth()]} ${sel.getFullYear()}`}
+  else{const first=new Date(view);for(let i=0;i<wdi(first);i++)cells.push(null);const n=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();for(let i=1;i<=n;i++)cells.push(new Date(view.getFullYear(),view.getMonth(),i));$("#mlabel").textContent=`${MN[view.getMonth()]} ${view.getFullYear()}`}
+  $("#mode").textContent=week?"Month":"Week";
+  $("#dates").innerHTML=cells.map(d=>{if(!d)return `<button class="out"></button>`;const k=dayLessons(d).length;
+    return `<button data-d="${iso(d)}" class="${iso(d)===iso(sel)?"sel":iso(d)===iso(today)?"td":""}"><span class="n">${d.getDate()}</span><span class="dots">${"<i></i>".repeat(Math.min(k,3))}</span></button>`}).join("");
+  renderLessons();
+}
+function renderLessons(){
+  const L=dayLessons(sel);
+  const pin='<svg class="i" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.8-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5.2-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
+  const col={green:"var(--green)",blue:"var(--blue)",orange:"var(--orange)"};
+  $("#lessons").innerHTML=L.length?L.map((l,i)=>`<div class="ls${l.mine?" mine":""}"><span class="bar" style="background:${col[l.c]}"></span><div class="body"><div class="top"><h4>${esc(l.t)}</h4><span class="tm">${l.from}–${l.to}</span></div><div class="who">${esc(l.who)}</div>${l.loc?`<div class="loc">${pin}${esc(l.loc)}</div>`:""}</div></div>`).join(""):`<div class="empty">No classes</div>`;
+}
+$("#dates").onclick=e=>{const b=e.target.closest("[data-d]");if(!b)return;const[y,m,d]=b.dataset.d.split("-");sel=new Date(y,m-1,d);renderCal()};
+$("#prev").onclick=()=>{if(week){sel.setDate(sel.getDate()-7)}else view.setMonth(view.getMonth()-1);renderCal()};
+$("#next").onclick=()=>{if(week){sel.setDate(sel.getDate()+7)}else view.setMonth(view.getMonth()+1);renderCal()};
+$("#mode").onclick=()=>{week=!week;if(!week)view=new Date(sel.getFullYear(),sel.getMonth(),1);renderCal()};
+$("#share").onclick=async()=>{
+  const txt=`${sel.toLocaleDateString("ru-RU",{weekday:"long",day:"numeric",month:"long"})}\n`+dayLessons(sel).map(l=>`${l.from}–${l.to} ${l.t} (${l.loc})`).join("\n");
+  try{if(navigator.share)await navigator.share({title:"Schedule",text:txt});else{await navigator.clipboard.writeText(txt);alert("Copied")}}catch(e){}
+};
+
+// ---- Profile
+let name=store.get("knus-name","Ансар");
+function renderProfile(){
+  const h=new Date().getHours();
+  $("#hi").textContent=(h<12?"Good morning, ":h<18?"Good afternoon, ":"Good evening, ")+name;
+}
+
+// ---- Sheets
+const rows=a=>a.map(r=>`<div class="row"><span>${r[0]}</span><span>${r[1]}</span></div>`).join("");
+const SH={
+  req:()=>`<h2>My Requests</h2>${rows([["Справка с места учёбы","Готово"],["Справка в военкомат","В обработке"]])}<button class="btn" data-close>New request</button>`,
+  qr:()=>`<h2>QR Scan</h2><p class="note">Отсканируйте QR-код в аудитории камерой iPhone, чтобы отметиться на паре.</p>`,
+  lib:()=>`<h2>Library</h2>${rows([["Возрастная анатомия","до 20 окт"],["Основы экономики","до 2 ноя"]])}<p class="note">Пн–Пт 09:00–18:00</p>`,
+  rmeb:()=>`<h2>RMEB catalogue</h2><p class="note">Республиканская межвузовская электронная библиотека.</p><a class="btn" href="https://rmebrk.kz" target="_blank" rel="noopener" style="text-decoration:none">Open rmebrk.kz</a>`,
+  room:()=>`<h2>Book a Room</h2>${rows([["B-02 113","свободна 14:00–18:00"],["B-04 221","свободна 14:00–17:00"],["Спортзал 2","свободен 15:00–19:00"]])}`,
+  exc:()=>`<h2>Class exemptions</h2><p class="note">Нет активных освобождений.</p><button class="btn" data-close>Upload certificate</button>`,
+  dorm:()=>`<h2>Dormitory</h2>${rows([["Общежитие","№1"],["Комната","312"],["Оплата за октябрь","Оплачено"]])}`,
+  rev:()=>`<h2>Teacher review</h2>${rows(Object.values(S).slice(0,4).map(s=>[s[1],"Оценить"]))}`,
+  tick:()=>`<h2>Service Center ticket</h2><p class="note">Электронная очередь в ЦОС.</p><button class="btn" id="tk">Get ticket</button><div id="tkn" style="text-align:center;font-size:40px;font-weight:700;margin-top:16px"></div>`,
+  psy:()=>`<h2>My psychologist</h2>${rows([["Психолог","Нурланова А.Б."],["Кабинет","B-03 105"],["Приём","Пн–Пт 14:00–17:00"]])}`,
+  ai:()=>`<h2>AI Assistant</h2><p class="note">Скоро здесь можно будет задать вопрос про учёбу и расписание.</p>`,
+  wifi:()=>`<h2>Campus WiFi</h2>${rows([["Сеть","KNUS-Student"],["Логин","ваш Student ID"],["Пароль","как в портале"]])}`,
+  grade:()=>`<h2>Grades</h2>${rows(Object.values(S).map((s,i)=>[s[0],[88,92,81,76,95,84,90,87,73,97][i]]))}`,
+  att:()=>`<h2>Attendance</h2>${rows(Object.values(S).map((s,i)=>[s[0],[100,96,88,92,100,90,100,94,85,100][i]+"%"]))}`,
+  pay:()=>`<h2>Payments</h2>${rows([["Обучение, осень","Оплачено"],["Общежитие, ноябрь","до 1 ноя"]])}`,
+  notif:()=>`<h2>Notifications</h2>${rows([["Регистрация в спортивные секции открыта","сегодня"]])}`,
+  gpa:()=>`<h2>GPA</h2>${rows([["Текущий GPA","3.41"],["Кредиты","30"]])}`,
+  trans:()=>`<h2>Transcript</h2>${rows(Object.values(S).map((s,i)=>[s[0],["A","A-","B+","B","B-","A","B+","A-","B","C+","A"][i]]))}`,
+  iup:()=>`<h2>Curriculum (IUP)</h2>${rows(Object.values(S).map(s=>[s[0],"3 кр."]))}`,
+  sch:()=>`<h2>Scholarship</h2>${rows([["Государственная стипендия","Назначена"],["Сумма","45 000 ₸"]])}`,
+  pin:()=>`<h2>Change PIN</h2><input class="inp" type="password" inputmode="numeric" maxlength="4" placeholder="New PIN"><button class="btn" data-close>Save</button>`,
+  help:()=>`<h2>Help &amp; Support</h2><p class="note">Вопросы по приложению: Support@knus.edu.kz</p>`,
+  del:()=>`<h2>Delete Account</h2><p class="note">Обратитесь в Service Center, чтобы удалить аккаунт.</p>`,
+  edit:()=>`<h2>Your name</h2><input class="inp" id="nm" value="${esc(name)}"><button class="btn" id="saveN">Save</button>`,
+  lang:()=>`<h2>Language</h2>${rows([["System default","✓"],["English",""],["Қазақша",""],["Русский",""]])}`,
+  about:()=>`<h2>My KNUS</h2><p class="note">Kazakh National University of Sports. Установка: Safari → Поделиться → На экран «Домой».</p>`,
+  add:()=>`<h2>New event</h2><input class="inp" id="eT" placeholder="Title"><div class="two"><input class="inp" id="eF" type="time" value="14:00"><input class="inp" id="eTo" type="time" value="15:00"></div><input class="inp" id="eL" placeholder="Location"><button class="btn" id="saveE">Add to ${sel.getDate()} ${MN[sel.getMonth()]}</button>${mine.some(e=>e.date===iso(sel))?`<button class="btn" id="clrE" style="background:var(--card);color:var(--text)">Delete my events this day</button>`:""}`
+};
+function open(k){
+  if(!SH[k])return;$("#sbody").innerHTML=SH[k]();$("#sheet").classList.add("on");$("#sbg").classList.add("on");
+  if(k==="edit")$("#saveN").onclick=()=>{const v=$("#nm").value.trim();if(v){name=v;store.set("knus-name",v);renderProfile()}close()};
+  if(k==="tick")$("#tk").onclick=()=>{$("#tkn").textContent="A-"+(100+Math.floor(Math.random()*900))};
+  if(k==="add"){
+    $("#saveE").onclick=()=>{const t=$("#eT").value.trim();if(!t)return;mine.push({date:iso(sel),t,from:$("#eF").value||"14:00",to:$("#eTo").value||"15:00",loc:$("#eL").value.trim()});store.set("knus-events",mine);close();renderCal()};
+    const c=$("#clrE");if(c)c.onclick=()=>{mine=mine.filter(e=>e.date!==iso(sel));store.set("knus-events",mine);close();renderCal()};
+  }
+}
+function close(){$("#sheet").classList.remove("on");$("#sbg").classList.remove("on")}
+$("#sbg").onclick=close;
+document.addEventListener("click",e=>{const o=e.target.closest("[data-open]");if(o)open(o.dataset.open);if(e.target.closest("[data-close]"))close()});
+$("#fab").onclick=()=>open("add");
+
+function go(t){
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tab===t));
+  document.querySelectorAll(".page").forEach(p=>p.classList.toggle("on",p.id==="p-"+t));
+  document.body.classList.toggle("sch",t==="schedule");scrollTo(0,0);
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>go(b.dataset.tab));
+
+renderToday();renderCal();renderProfile();
+setInterval(renderToday,60000);
+
+if("serviceWorker" in navigator&&location.protocol==="https:"&&!location.hostname.endsWith("claude.ai")&&!location.hostname.includes("claudeusercontent")){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body></html>
