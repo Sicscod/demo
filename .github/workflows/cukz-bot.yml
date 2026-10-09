@@ -58,33 +58,13 @@ jobs:
         if: steps.secrets.outputs.ok == 'true'
         run: npm test
 
-      - name: Set up database
-        if: steps.secrets.outputs.ok == 'true'
-        run: ./scripts/ensure-d1.sh
-
       - name: Deploy worker and connect Telegram
         if: steps.secrets.outputs.ok == 'true' && github.event_name != 'schedule'
-        run: |
-          out=$(npx wrangler deploy 2>&1) || { echo "$out"; exit 1; }
-          echo "$out"
-          url=$(echo "$out" | grep -o 'https://[a-zA-Z0-9.-]*\.workers\.dev' | head -1)
-          if [ -z "$url" ]; then
-            echo "::error::No workers.dev URL. Open Workers & Pages in the Cloudflare dashboard once to create your workers.dev subdomain."
-            exit 1
-          fi
-          printf %s "$TELEGRAM_TOKEN" | npx wrangler secret put TELEGRAM_TOKEN
-          secret=$(printf %s "$TELEGRAM_TOKEN" | sha256sum | cut -c1-32)
-          api="https://api.telegram.org/bot$TELEGRAM_TOKEN"
-          curl -fsS "$api/setWebhook" -H 'content-type: application/json' \
-            -d "{\"url\":\"$url/tg\",\"secret_token\":\"$secret\",\"allowed_updates\":[\"message\"]}" > /dev/null
-          curl -fsS "$api/setMyCommands" -H 'content-type: application/json' -d '{"commands":[
-            {"command":"today","description":"Today'"'"'s classes"},
-            {"command":"tomorrow","description":"Tomorrow'"'"'s classes"},
-            {"command":"week","description":"This week"},
-            {"command":"nextweek","description":"Next week"},
-            {"command":"remind","description":"Reminders before class on/off"},
-            {"command":"id","description":"Change student number"}]}' > /dev/null
-          echo "Bot is live at $url"
+        run: ./scripts/deploy.sh
+
+      - name: Set up database
+        if: steps.secrets.outputs.ok == 'true' && github.event_name == 'schedule'
+        run: ./scripts/ensure-d1.sh
 
       - name: Load timetable updates
         if: steps.secrets.outputs.ok == 'true'
