@@ -1,0 +1,14 @@
+{
+  "name": "cukz-bot-render",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "preview": "node scripts/preview.mjs ./preview"
+  },
+  "dependencies": {
+    "@vercel/og": "1.0.1"
+  }
+}
