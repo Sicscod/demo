@@ -9,4 +9,4 @@ crons = ["*/5 * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "cukz-bot"
-database_id = "__D1_ID__" # filled in by the deploy workflow
+database_id = "0c329066-0f08-47b2-bc25-437850fefb1e" # kept in sync by scripts/ensure-d1.sh
