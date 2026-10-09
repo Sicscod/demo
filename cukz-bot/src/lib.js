@@ -29,10 +29,13 @@ export function addMinutes(hhmm, n) {
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function dayTitle(date) {
+export function dayTitle(date, withYear = false) {
   const d = new Date(date + 'T00:00:00Z');
-  return `${DAYS[(d.getUTCDay() + 6) % 7]}, ${String(d.getUTCDate()).padStart(2, '0')} ${MONTHS[d.getUTCMonth()]}`;
+  const title = `${DAYS[(d.getUTCDay() + 6) % 7]}, ${String(d.getUTCDate()).padStart(2, '0')} ${MONTHS[d.getUTCMonth()]}`;
+  return withYear ? `${title} ${d.getUTCFullYear()}` : title;
 }
+
+export const weekdayLabel = (date) => dayTitle(date).slice(0, 3).toUpperCase(); // 'MON'
 
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -46,14 +49,18 @@ export function formatSession(s) {
     .filter(Boolean).join('\n');
 }
 
-export function formatDay(date, sessions) {
+const closedLine = (name) => `🏖 University closed — ${esc(name)}`;
+
+// holidays: { 'YYYY-MM-DD': 'Republic Day' }
+export function formatDay(date, sessions, holidays = {}) {
   const title = `📅 <b>${dayTitle(date)}</b>`;
-  if (!sessions.length) return `${title}\nNo classes 🎉`;
-  return `${title}\n\n${sessions.map(formatSession).join('\n\n')}`;
+  const closed = holidays[date] ? `\n${closedLine(holidays[date])}` : '';
+  if (!sessions.length) return `${title}${closed || '\nNo classes 🎉'}`;
+  return `${title}${closed}\n\n${sessions.map(formatSession).join('\n\n')}`;
 }
 
 // Week view: one block per day that has classes (Mon–Sun).
-export function formatWeek(monday, sessions) {
+export function formatWeek(monday, sessions, holidays = {}) {
   const byDay = new Map();
   for (const s of sessions) (byDay.get(s.date) || byDay.set(s.date, []).get(s.date)).push(s);
   const parts = [];
@@ -61,6 +68,7 @@ export function formatWeek(monday, sessions) {
     const date = addDays(monday, i);
     const list = byDay.get(date);
     if (list?.length) parts.push(`📅 <b>${dayTitle(date)}</b>\n\n${list.map(formatSession).join('\n\n')}`);
+    else if (holidays[date] && i < 5) parts.push(`📅 <b>${dayTitle(date)}</b>\n${closedLine(holidays[date])}`);
   }
   const head = `🗓 <b>Week of ${dayTitle(monday).split(', ')[1]}</b>`;
   return parts.length ? `${head}\n\n${parts.join('\n\n— — —\n\n')}` : `${head}\nNo classes this week 🎉`;

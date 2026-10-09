@@ -1,16 +1,20 @@
 // Cardiff University Kazakhstan timetable bot (Cloudflare Worker).
-// Telegram webhook + 5-minute cron for class reminders and Microsoft sign-in polling.
-// The timetable itself is loaded into D1 by scripts/ingest.mjs (GitHub Actions).
+// Telegram webhook, a 5-minute cron for class reminders and Microsoft sign-in polling,
+// and a 30-minute cron that downloads Student_Timetables.html from SharePoint when it changes.
 
 import {
   astanaNow, addDays, mondayOf, addMinutes, formatDay, formatWeek, formatReminder, isStudentId, esc,
+  dayTitle, weekdayLabel,
 } from './lib.js';
+import { loadTimetable } from './timetable.js';
 
 // Microsoft sign-in (device code flow) for automatic timetable downloads.
 const MS_TENANT = 'bdb74b30-9568-4856-bdbf-06759778fcbc'; // cf.ac.uk
 const MS_CLIENT = 'd3590ed6-52b3-4102-aeff-aad2292ab01c'; // Microsoft Office public client
 const MS_SCOPE = 'https://graph.microsoft.com/.default offline_access';
 const REMIND_MIN = 30;
+const UPDATE_CRON = '7,37 * * * *'; // must match wrangler.toml
+const FILE_NAME = 'Student_Timetables.html';
 
 const KEYBOARD = {
   keyboard: [[{ text: 'Today' }, { text: 'Tomorrow' }], [{ text: 'This week' }, { text: 'Next week' }]],
@@ -29,11 +33,19 @@ export default {
       ctx.waitUntil(handleUpdate(update, env).catch((e) => console.error('update failed', e.stack || e)));
       return new Response('ok');
     }
+    // Manual timetable refresh from SharePoint, for whoever holds the bot token.
+    if (req.method === 'POST' && url.pathname === '/update') {
+      if (req.headers.get('X-Telegram-Bot-Api-Secret-Token') !== (await webhookSecret(env))) {
+        return new Response('forbidden', { status: 403 });
+      }
+      return Response.json(await autoUpdate(env, { force: url.searchParams.has('force') }));
+    }
     return new Response('cukz-bot is running');
   },
 
-  async scheduled(_event, env, ctx) {
-    ctx.waitUntil(Promise.all([sendReminders(env), pollMicrosoftLogin(env)]));
+  async scheduled(event, env, ctx) {
+    if (event.cron === UPDATE_CRON) ctx.waitUntil(autoUpdate(env, {}));
+    else ctx.waitUntil(Promise.all([sendReminders(env), pollMicrosoftLogin(env)]));
   },
 };
 
@@ -57,6 +69,46 @@ async function tg(env, method, body) {
 
 const send = (env, chat_id, text, extra = {}) =>
   tg(env, 'sendMessage', { chat_id, text, parse_mode: 'HTML', disable_web_page_preview: true, ...extra });
+
+const sha256 = async (text) =>
+  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))]
+    .map((b) => b.toString(16).padStart(2, '0')).join('');
+
+// Sends the timetable as a picture drawn by the render service (render/), reusing the Telegram
+// file_id when the same picture was sent before. Falls back to the text version.
+async function sendTimetable(env, chatId, picture, text) {
+  if (env.RENDER_URL) {
+    try {
+      const body = JSON.stringify(picture);
+      const key = await sha256(body);
+      const cached = await env.DB.prepare('SELECT file_id FROM images WHERE k = ?').bind(key).first();
+      if (cached && (await tg(env, 'sendPhoto', { chat_id: chatId, photo: cached.file_id, reply_markup: KEYBOARD })).ok) return;
+      const res = await fetch(env.RENDER_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-render-key': env.RENDER_KEY || '' },
+        body,
+      });
+      if (!res.ok) throw new Error(`render: HTTP ${res.status}`);
+      const form = new FormData();
+      form.append('chat_id', String(chatId));
+      form.append('reply_markup', JSON.stringify(KEYBOARD));
+      form.append('photo', new Blob([await res.arrayBuffer()], { type: 'image/png' }), 'timetable.png');
+      const sent = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendPhoto`, {
+        method: 'POST', body: form,
+      })).json();
+      if (!sent.ok) throw new Error(`sendPhoto: ${sent.description}`);
+      const fileId = sent.result.photo.at(-1).file_id;
+      await env.DB.prepare('INSERT OR REPLACE INTO images (k, file_id) VALUES (?, ?)').bind(key, fileId).run();
+      return;
+    } catch (e) {
+      console.error('picture failed', e.stack || e);
+    }
+  }
+  return send(env, chatId, text, { reply_markup: KEYBOARD });
+}
+
+const pictureSession = ({ start, end, code, title, type, rooms, staff, grp }) =>
+  ({ start, end, code, title, type, rooms, staff, grp });
 
 // ---------- Storage ----------
 
@@ -121,6 +173,11 @@ async function handleUpdate(update, env) {
       case '/login': return startMicrosoftLogin(env, chatId);
       case '/source': return setSource(env, chatId, args[0]);
       case '/status': return showStatus(env, chatId);
+      case '/update': {
+        await send(env, chatId, '⏳ Checking SharePoint…');
+        const result = await autoUpdate(env, { force: true, quiet: true });
+        return send(env, chatId, updateMessage(result));
+      }
     }
   }
 
@@ -151,19 +208,59 @@ async function requireStudent(env, chatId) {
   return user.sid;
 }
 
+// { holidays: { date: name }, min, max } of the loaded timetable
+async function calendar(env) {
+  const { results } = await env.DB.prepare("SELECT k, v FROM kv WHERE k IN ('tt_holidays', 'tt_min', 'tt_max')").all();
+  const kv = Object.fromEntries(results.map((r) => [r.k, r.v]));
+  let holidays = {};
+  try {
+    holidays = JSON.parse(kv.tt_holidays || '{}');
+  } catch {}
+  return { holidays: holidays && !Array.isArray(holidays) ? holidays : {}, min: kv.tt_min, max: kv.tt_max };
+}
+
+const noTimetable = (env, chatId, title) =>
+  send(env, chatId, `${title}\nThe university has not published the timetable for these dates yet.`, { reply_markup: KEYBOARD });
+
 async function showDay(env, chatId, offset) {
   const sid = await requireStudent(env, chatId);
   if (!sid) return;
   const date = addDays(astanaNow().date, offset);
-  return send(env, chatId, formatDay(date, await sessionsFor(env, sid, date, date)), { reply_markup: KEYBOARD });
+  const [sessions, cal] = await Promise.all([sessionsFor(env, sid, date, date), calendar(env)]);
+  const text = formatDay(date, sessions, cal.holidays);
+  if (!sessions.length) {
+    if ((cal.min && date < cal.min) || (cal.max && date > cal.max)) return noTimetable(env, chatId, `📅 <b>${dayTitle(date)}</b>`);
+    return send(env, chatId, text, { reply_markup: KEYBOARD });
+  }
+  return sendTimetable(env, chatId, {
+    kind: 'day',
+    title: dayTitle(date, true),
+    days: [{ label: weekdayLabel(date), closed: cal.holidays[date] || null, sessions: sessions.map(pictureSession) }],
+  }, text);
 }
 
 async function showWeek(env, chatId, offsetDays) {
   const sid = await requireStudent(env, chatId);
   if (!sid) return;
   const monday = mondayOf(addDays(astanaNow().date, offsetDays));
-  const sessions = await sessionsFor(env, sid, monday, addDays(monday, 6));
-  return send(env, chatId, formatWeek(monday, sessions), { reply_markup: KEYBOARD });
+  const sunday = addDays(monday, 6);
+  const [sessions, cal] = await Promise.all([sessionsFor(env, sid, monday, sunday), calendar(env)]);
+  const text = formatWeek(monday, sessions, cal.holidays);
+  if (!sessions.length) {
+    if ((cal.min && sunday < cal.min) || (cal.max && monday > cal.max)) {
+      return noTimetable(env, chatId, `🗓 <b>Week of ${dayTitle(monday).split(', ')[1]}</b>`);
+    }
+    return send(env, chatId, text, { reply_markup: KEYBOARD });
+  }
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(monday, i);
+    const list = sessions.filter((s) => s.date === date);
+    if (i < 5 || list.length) {
+      days.push({ label: weekdayLabel(date), closed: cal.holidays[date] || null, sessions: list.map(pictureSession) });
+    }
+  }
+  return sendTimetable(env, chatId, { kind: 'week', title: `Week of ${dayTitle(monday, true).split(', ')[1]}`, days }, text);
 }
 
 async function toggleRemind(env, chatId) {
@@ -204,16 +301,26 @@ async function claimAdmin(env, chatId) {
   await kvSet(env, 'admin', String(chatId));
   return send(env, chatId,
     '🔑 You are the admin.\n\n' +
-    '• Send me <b>Student_Timetables.html</b> as a file to update the timetable.\n' +
-    '• /source <i>link</i> — SharePoint link to the file, for automatic updates\n' +
-    '• /login — sign in with the university Microsoft account (for automatic updates)\n' +
+    '• /login — sign in with the university Microsoft account, then the timetable updates by itself\n' +
+    '• /source <i>link</i> — SharePoint link to the file (optional, found automatically)\n' +
+    '• /update — check for a new timetable now\n' +
+    '• Or send me <b>Student_Timetables.html</b> as a file.\n' +
     '• /status — what is loaded');
 }
 
 async function onTimetableFile(env, chatId, doc) {
   if (!/\.html?$/i.test(doc.file_name || '')) return send(env, chatId, 'Send the Student_Timetables.html file.');
-  await kvSet(env, 'pending_file', doc.file_id);
-  return send(env, chatId, '📥 Got it. The timetable will be updated within the next hour, I will message you.');
+  try {
+    const info = await tg(env, 'getFile', { file_id: doc.file_id });
+    if (!info.ok) throw new Error(`Telegram getFile: ${info.description}`);
+    const res = await fetch(`https://api.telegram.org/file/bot${env.TELEGRAM_TOKEN}/${info.result.file_path}`);
+    if (!res.ok) throw new Error(`Telegram file download: HTTP ${res.status}`);
+    const result = await loadTimetable(env.DB, await res.text(), { last_error: '' });
+    return send(env, chatId, updateMessage({ ok: true, loaded: true, ...result }));
+  } catch (e) {
+    await kvSet(env, 'last_error', `${new Date().toISOString()} ${e.message}`.slice(0, 500));
+    return send(env, chatId, `❌ Timetable update failed: ${esc(e.message)}`);
+  }
 }
 
 async function setSource(env, chatId, link) {
@@ -225,9 +332,9 @@ async function setSource(env, chatId, link) {
 }
 
 async function showStatus(env, chatId) {
-  const [updated, loadedAt, source, refresh, lastError, users, students, sessions] = await Promise.all([
+  const [updated, loadedAt, source, refresh, lastError, lastCheck, users, students, sessions] = await Promise.all([
     kvGet(env, 'tt_updated'), kvGet(env, 'tt_loaded_at'), kvGet(env, 'source_url'), kvGet(env, 'ms_refresh'),
-    kvGet(env, 'last_error'),
+    kvGet(env, 'last_error'), kvGet(env, 'last_check'),
     env.DB.prepare('SELECT COUNT(*) AS n FROM users').first(),
     env.DB.prepare('SELECT COUNT(*) AS n FROM students').first(),
     env.DB.prepare('SELECT COUNT(*) AS n FROM sessions').first(),
@@ -235,7 +342,8 @@ async function showStatus(env, chatId) {
   return send(env, chatId, [
     `Timetable: ${esc(updated || '—')} (loaded ${esc(loadedAt || 'never')})`,
     `Students: ${students.n}, classes: ${sessions.n}, bot users: ${users.n}`,
-    `Auto-update: ${source ? 'link set' : 'no link'}, ${refresh ? 'signed in' : 'not signed in'}`,
+    `Auto-update: ${refresh ? 'signed in' : 'not signed in (/login)'}, ${source ? 'link set' : 'link found automatically'}, ` +
+      `last check ${esc(lastCheck || 'never')}`,
     lastError && `Last error: ${esc(lastError)}`,
   ].filter(Boolean).join('\n'));
 }
@@ -276,5 +384,99 @@ async function pollMicrosoftLogin(env) {
     return send(env, pending.chatId, `❌ Sign-in failed: ${esc(data.error_description || data.error)}`);
   }
   await kvSet(env, 'ms_refresh', data.refresh_token);
-  return send(env, pending.chatId, '✅ Signed in. The timetable will now update automatically once a day.');
+  return send(env, pending.chatId,
+    '✅ Signed in. I will check for a new timetable every 30 minutes. Send /update to load it right now.');
+}
+
+// ---------- Automatic timetable updates from SharePoint ----------
+
+const shareId = (url) =>
+  'u!' + btoa(String.fromCharCode(...new TextEncoder().encode(url))).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-');
+
+async function microsoftToken(env) {
+  const refresh = await kvGet(env, 'ms_refresh');
+  if (!refresh) return null;
+  const res = await fetch(`https://login.microsoftonline.com/${MS_TENANT}/oauth2/v2.0/token`, {
+    method: 'POST',
+    body: new URLSearchParams({ grant_type: 'refresh_token', client_id: MS_CLIENT, refresh_token: refresh, scope: MS_SCOPE }),
+  });
+  const data = await res.json();
+  if (!data.access_token) {
+    const err = new Error(`Microsoft sign-in: ${data.error_description?.split('\r\n')[0] || data.error || `HTTP ${res.status}`}`);
+    err.signedOut = ['invalid_grant', 'interaction_required'].includes(data.error);
+    throw err;
+  }
+  // Refresh tokens rotate: keep the newest one.
+  if (data.refresh_token && data.refresh_token !== refresh) await kvSet(env, 'ms_refresh', data.refresh_token);
+  return data.access_token;
+}
+
+async function graph(token, path, init = {}) {
+  const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
+    ...init, headers: { authorization: `Bearer ${token}`, ...init.headers },
+  });
+  if (res.status >= 400) {
+    throw new Error(`SharePoint ${path.split('?')[0].split('/')[1]}: HTTP ${res.status} ${(await res.text()).slice(0, 150)}`);
+  }
+  return res;
+}
+
+// Newest Student_Timetables.html the signed-in student can see (used when /source is not set).
+async function findTimetableUrl(token) {
+  const res = await graph(token, '/search/query', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ requests: [{ entityTypes: ['driveItem'], query: { queryString: `filename:${FILE_NAME}` }, size: 25 }] }),
+  });
+  const hits = (await res.json()).value?.[0]?.hitsContainers?.flatMap((c) => c.hits || []) || [];
+  const files = hits.map((h) => h.resource).filter((r) => r?.name?.toLowerCase() === FILE_NAME.toLowerCase());
+  files.sort((a, b) => String(b.lastModifiedDateTime).localeCompare(String(a.lastModifiedDateTime)));
+  if (!files.length) throw new Error(`Could not find ${FILE_NAME} on SharePoint. Send /source with its link.`);
+  return files[0].webUrl;
+}
+
+// Downloads the timetable if it changed since the last load (or always with force) and loads it.
+// Returns { ok, loaded, students, sessions, updated } or { ok: false, error }.
+export async function autoUpdate(env, { force = false, quiet = false }) {
+  try {
+    const token = await microsoftToken(env);
+    if (!token) return { ok: false, error: 'Not signed in to Microsoft. Send /login first.' };
+    let url = await kvGet(env, 'source_url');
+    if (!url) {
+      url = await findTimetableUrl(token);
+      await kvSet(env, 'source_url', url);
+    }
+    const id = shareId(url);
+    const item = await (await graph(token, `/shares/${id}/driveItem?$select=eTag,lastModifiedDateTime`)).json();
+    await kvSet(env, 'last_check', new Date().toISOString());
+    if (!force && item.eTag && item.eTag === (await kvGet(env, 'tt_etag'))) return { ok: true, loaded: false };
+
+    // /content answers with a redirect to a pre-signed download link, which must be fetched without our token.
+    let res = await graph(token, `/shares/${id}/driveItem/content`, { redirect: 'manual' });
+    if (res.status >= 300 && res.status < 400) res = await fetch(res.headers.get('location'));
+    if (!res.ok) throw new Error(`SharePoint download: HTTP ${res.status}`);
+    const result = await loadTimetable(env.DB, await res.text(), { tt_etag: item.eTag || '', last_error: '' });
+    const out = { ok: true, loaded: true, ...result };
+    const admin = await kvGet(env, 'admin');
+    if (admin && !quiet) await send(env, admin, updateMessage(out));
+    return out;
+  } catch (e) {
+    console.error('auto update failed', e.stack || e);
+    const previous = (await kvGet(env, 'last_error')) || '';
+    const line = `${new Date().toISOString()} ${e.message}`.slice(0, 500); // ISO time is 24 characters
+    await kvSet(env, 'last_error', line);
+    if (e.signedOut) await kvDel(env, 'ms_refresh');
+    const admin = await kvGet(env, 'admin');
+    // Tell the admin once per new problem, not every 30 minutes.
+    if (admin && !quiet && previous.slice(25) !== line.slice(25)) {
+      await send(env, admin, `❌ Timetable update failed: ${esc(e.message)}${e.signedOut ? '\nSend /login to sign in again.' : ''}`);
+    }
+    return { ok: false, error: e.message + (e.signedOut ? ' Send /login to sign in again.' : '') };
+  }
+}
+
+function updateMessage(r) {
+  if (!r.ok) return `❌ Timetable update failed: ${esc(r.error)}`;
+  if (!r.loaded) return 'ℹ️ The timetable has not changed.';
+  return `✅ Timetable updated (${esc(r.updated || 'no date')}): ${r.students} students, ${r.sessions} classes.`;
 }

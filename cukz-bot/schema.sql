@@ -1,6 +1,6 @@
--- Unique timetable sessions (one row per class occurrence)
+-- Unique timetable sessions (one row per class occurrence); rebuilt on every load (src/timetable.js)
 CREATE TABLE IF NOT EXISTS sessions (
-  id INTEGER PRIMARY KEY,
+  id TEXT PRIMARY KEY,     -- event key from the file
   date TEXT NOT NULL,      -- YYYY-MM-DD (Astana local)
   start TEXT NOT NULL,     -- HH:MM
   end TEXT NOT NULL,       -- HH:MM
@@ -18,3 +18,5 @@ CREATE TABLE IF NOT EXISTS users (
 );
 -- Small settings: admin, Microsoft tokens, source link, timetable meta
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
+-- Telegram file_id of each rendered timetable image, keyed by a hash of what it shows
+CREATE TABLE IF NOT EXISTS images (k TEXT PRIMARY KEY, file_id TEXT NOT NULL);

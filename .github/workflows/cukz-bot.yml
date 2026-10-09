@@ -1,19 +1,12 @@
 name: cukz-bot
 
-# Deploys the Cardiff Kazakhstan timetable Telegram bot to Cloudflare Workers
-# and loads timetable updates into its D1 database.
+# Deploys the Cardiff Kazakhstan timetable Telegram bot to Cloudflare Workers.
+# The bot downloads timetable updates itself (see cukz-bot/src/worker.js).
 on:
   push:
     branches: [main]
     paths: ['cukz-bot/**', '.github/workflows/cukz-bot.yml']
-  schedule:
-    - cron: '17 * * * *' # hourly: pick up a file sent to the bot, or the daily auto-update
   workflow_dispatch:
-    inputs:
-      force_update:
-        description: Download the timetable from SharePoint now
-        type: boolean
-        default: false
 
 concurrency: cukz-bot
 
@@ -29,43 +22,24 @@ jobs:
       run:
         working-directory: cukz-bot
     steps:
-      - name: Check secrets
-        id: secrets
-        working-directory: .
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$TELEGRAM_TOKEN" ]; then
-            echo "::warning::Add TELEGRAM_TOKEN, CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repository secrets to run the bot."
-            echo "ok=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: actions/checkout@v4
-        if: steps.secrets.outputs.ok == 'true'
 
       - uses: actions/setup-node@v4
-        if: steps.secrets.outputs.ok == 'true'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: cukz-bot/package-lock.json
 
       - name: Install
-        if: steps.secrets.outputs.ok == 'true'
         run: npm ci
 
       - name: Test
-        if: steps.secrets.outputs.ok == 'true'
         run: npm test
 
       - name: Deploy worker and connect Telegram
-        if: steps.secrets.outputs.ok == 'true' && github.event_name != 'schedule'
-        run: ./scripts/deploy.sh
-
-      - name: Set up database
-        if: steps.secrets.outputs.ok == 'true' && github.event_name == 'schedule'
-        run: ./scripts/ensure-d1.sh
-
-      - name: Load timetable updates
-        if: steps.secrets.outputs.ok == 'true'
-        run: node scripts/ingest.mjs ${{ inputs.force_update && '--force' || '' }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$TELEGRAM_TOKEN" ]; then
+            echo "::notice::No Cloudflare/Telegram secrets, skipping deploy (deploy from a laptop with scripts/deploy.sh)."
+          else
+            ./scripts/deploy.sh
+          fi
