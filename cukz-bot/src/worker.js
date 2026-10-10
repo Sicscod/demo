@@ -4,7 +4,7 @@
 
 import {
   astanaNow, addDays, mondayOf, addMinutes, formatDay, formatWeek, formatReminder, isStudentId, esc,
-  dayTitle, weekdayLabel,
+  dayTitle, weekdayLabel, parseDate,
 } from './lib.js';
 import { loadTimetable } from './timetable.js';
 
@@ -142,6 +142,8 @@ async function handleUpdate(update, env) {
   const command = cmd.toLowerCase().replace(/@.*$/, '');
 
   if (isStudentId(text)) return setStudent(env, chatId, text);
+  const typedDate = parseDate(text, astanaNow().date);
+  if (typedDate) return showDate(env, chatId, typedDate);
 
   switch (command) {
     case '/start':
@@ -150,6 +152,7 @@ async function handleUpdate(update, env) {
         '👋 Hi! I show your <b>Cardiff University Kazakhstan</b> timetable.\n\n' +
         'Send me your <b>8-digit student number</b> once, I will remember it.\n\n' +
         '/today · /tomorrow · /week · /nextweek\n' +
+        'Any day: send a date like <b>15.10</b>\n' +
         `/remind — turn reminders ${REMIND_MIN} min before class on or off\n` +
         '/id — change your student number', { reply_markup: KEYBOARD });
     case '/today': case 'today':
@@ -160,6 +163,11 @@ async function handleUpdate(update, env) {
       return showWeek(env, chatId, 0);
     case '/nextweek': case 'next':
       return showWeek(env, chatId, 7);
+    case '/date': {
+      const date = parseDate(args.join(''), astanaNow().date);
+      if (date) return showDate(env, chatId, date);
+      return send(env, chatId, 'Send a date like <b>15.10</b> or <b>15.10.2026</b>.', { reply_markup: KEYBOARD });
+    }
     case '/id':
       return send(env, chatId, 'Send me your 8-digit student number.');
     case '/remind':
@@ -222,10 +230,11 @@ async function calendar(env) {
 const noTimetable = (env, chatId, title) =>
   send(env, chatId, `${title}\nThe university has not published the timetable for these dates yet.`, { reply_markup: KEYBOARD });
 
-async function showDay(env, chatId, offset) {
+const showDay = (env, chatId, offset) => showDate(env, chatId, addDays(astanaNow().date, offset));
+
+async function showDate(env, chatId, date) {
   const sid = await requireStudent(env, chatId);
   if (!sid) return;
-  const date = addDays(astanaNow().date, offset);
   const [sessions, cal] = await Promise.all([sessionsFor(env, sid, date, date), calendar(env)]);
   const text = formatDay(date, sessions, cal.holidays);
   if (!sessions.length) {

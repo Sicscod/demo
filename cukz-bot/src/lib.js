@@ -84,3 +84,16 @@ export function formatReminder(s, minutes) {
 }
 
 export const isStudentId = (t) => /^\d{8}$/.test(t);
+
+// "15.10", "15/10/2026", "15-10-26" or "2026-10-15" -> '2026-10-15' (year defaults to today's), else null.
+export function parseDate(text, today) {
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
+  let [y, mo, d] = m ? [m[1], m[2], m[3]] : [];
+  if (!m) {
+    m = /^(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2}|\d{4}))?$/.exec(text);
+    if (!m) return null;
+    [d, mo, y] = [m[1], m[2], m[3] ? (m[3].length === 2 ? `20${m[3]}` : m[3]) : today.slice(0, 4)];
+  }
+  const date = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) === date ? date : null; // rejects 31.02
+}

@@ -78,3 +78,14 @@ test('falls back to text when the picture cannot be drawn', async () => {
   assert.equal(calls.at(-1).method, 'sendMessage');
   assert.match(calls.at(-1).body.text, /EL0016 · O'Brien Skills/);
 });
+
+test('a typed date or /date shows that day', async () => {
+  const { calls, say } = await setup();
+  await say('12.10');
+  assert.equal(calls.find((c) => c.render).render.title, 'Monday, 12 Oct 2026');
+  calls.length = 0;
+  await say('/date 13.10.2026');
+  assert.equal(calls.find((c) => c.render).render.title, 'Tuesday, 13 Oct 2026');
+  await say('/date soon');
+  assert.match(calls.at(-1).body.text, /Send a date like/);
+});

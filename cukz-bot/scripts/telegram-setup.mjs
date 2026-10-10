@@ -21,6 +21,7 @@ await call('setMyCommands', { commands: [
   { command: 'tomorrow', description: "Tomorrow's classes" },
   { command: 'week', description: 'This week' },
   { command: 'nextweek', description: 'Next week' },
+  { command: 'date', description: 'Classes on a date, e.g. /date 15.10' },
   { command: 'remind', description: 'Reminders before class on/off' },
   { command: 'id', description: 'Change student number' },
 ] });

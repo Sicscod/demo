@@ -42,3 +42,14 @@ test('reminder', () => {
     '⏰ <b>Starting in 29 min</b>\n\n📘 EL0016 · Academic Skills\n📍 Room 8.3/C [70]\n🕘 9:00–9:50');
   assert.doesNotMatch(formatReminder({ ...lesson, rooms: '' }, 29), /📍/);
 });
+
+test('typed dates', async () => {
+  const { parseDate } = await import('../src/lib.js');
+  assert.equal(parseDate('15.10', '2026-10-10'), '2026-10-15');
+  assert.equal(parseDate('5/1/27', '2026-10-10'), '2027-01-05');
+  assert.equal(parseDate('15-10-2026', '2026-10-10'), '2026-10-15');
+  assert.equal(parseDate('2026-10-15', '2026-10-10'), '2026-10-15');
+  assert.equal(parseDate('31.02', '2026-10-10'), null);
+  assert.equal(parseDate('12345678', '2026-10-10'), null);
+  assert.equal(parseDate('today', '2026-10-10'), null);
+});
