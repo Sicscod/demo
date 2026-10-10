@@ -4,7 +4,7 @@
 
 import {
   astanaNow, addDays, mondayOf, addMinutes, formatDay, formatWeek, formatReminder, isStudentId, esc,
-  dayTitle, weekdayLabel, parseDate,
+  dayTitle, weekdayLabel, parseDate, TZ_OFFSET_MIN,
 } from './lib.js';
 import { loadTimetable } from './timetable.js';
 
@@ -20,6 +20,12 @@ const KEYBOARD = {
   keyboard: [[{ text: 'Today' }, { text: 'Tomorrow' }], [{ text: 'This week' }, { text: 'Next week' }]],
   resize_keyboard: true,
   is_persistent: true,
+};
+
+// What each user message counts as in /stats
+const ACTIONS = {
+  '/start': 'start', '/help': 'help', '/today': 'today', today: 'today', '/tomorrow': 'tomorrow', tomorrow: 'tomorrow',
+  '/week': 'week', this: 'week', '/nextweek': 'nextweek', next: 'nextweek', '/date': 'date', '/id': 'id', '/remind': 'remind',
 };
 
 export default {
@@ -44,7 +50,10 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    if (event.cron === UPDATE_CRON) ctx.waitUntil(autoUpdate(env, {}));
+    if (event.cron === UPDATE_CRON) {
+      ctx.waitUntil(autoUpdate(env, {}));
+      ctx.waitUntil(env.DB.prepare("DELETE FROM events WHERE at < datetime('now', '-90 days')").run());
+    }
     else ctx.waitUntil(Promise.all([sendReminders(env), pollMicrosoftLogin(env)]));
   },
 };
@@ -64,6 +73,12 @@ async function tg(env, method, body) {
   });
   const data = await res.json();
   if (!data.ok) console.error(method, data.description);
+  if (data.error_code === 403 && body.chat_id) {
+    await env.DB.prepare(
+      `INSERT INTO people (chat_id, blocked) VALUES (?, datetime('now'))
+       ON CONFLICT(chat_id) DO UPDATE SET blocked = coalesce(blocked, excluded.blocked)`,
+    ).bind(body.chat_id).run();
+  }
   return data;
 }
 
@@ -146,6 +161,9 @@ async function handleUpdate(update, env) {
   const text = (msg.text || '').trim();
   const [cmd, ...args] = text.split(/\s+/);
   const command = cmd.toLowerCase().replace(/@.*$/, '');
+  const action = isStudentId(text) ? 'student_number' : parseDate(text, astanaNow().date) ? 'date'
+    : ACTIONS[command] || (isAdmin && command.startsWith('/') ? null : 'other');
+  if (action) await env.DB.prepare('INSERT INTO events (chat_id, action) VALUES (?, ?)').bind(chatId, action).run();
 
   if (isStudentId(text)) return setStudent(env, chatId, text);
   const typedDate = parseDate(text, astanaNow().date);
@@ -300,13 +318,18 @@ async function sendReminders(env) {
      WHERE u.remind = 1 AND s.date = ? AND s.start > ? AND s.start <= ?`,
   ).bind(now.date, from, to).all();
   const [h, m] = now.time.split(':').map(Number);
+  const sent = [];
   for (const row of results) {
     const [sh, sm] = row.start.split(':').map(Number);
     try {
-      await send(env, row.chat_id, formatReminder(row, sh * 60 + sm - (h * 60 + m)));
+      if ((await send(env, row.chat_id, formatReminder(row, sh * 60 + sm - (h * 60 + m)))).ok) sent.push(row.chat_id);
     } catch (e) {
       console.error('reminder failed', row.chat_id, e);
     }
+  }
+  if (sent.length) {
+    await env.DB.prepare(`INSERT INTO events (chat_id, action) VALUES ${sent.map(() => "(?, 'reminder')").join(', ')}`)
+      .bind(...sent).run();
   }
 }
 
@@ -367,9 +390,13 @@ async function showStatus(env, chatId) {
   ].filter(Boolean).join('\n'));
 }
 
+// `from` is a message's sender (has language_code, is_premium) or a getChat result (has neither).
 const saveProfile = (env, chatId, from) => from && env.DB.prepare(
-  'INSERT OR REPLACE INTO profiles (chat_id, username, name) VALUES (?, ?, ?)',
-).bind(chatId, from.username || '', [from.first_name, from.last_name].filter(Boolean).join(' ')).run();
+  `INSERT INTO people (chat_id, username, name, lang, premium) VALUES (?, ?, ?, ?, ?)
+   ON CONFLICT(chat_id) DO UPDATE SET username = excluded.username, name = excluded.name,
+     lang = coalesce(excluded.lang, lang), premium = coalesce(excluded.premium, premium), blocked = NULL`,
+).bind(chatId, from.username || '', [from.first_name, from.last_name].filter(Boolean).join(' '),
+  from.language_code ?? null, 'is_premium' in from || 'language_code' in from ? (from.is_premium ? 1 : 0) : null).run();
 
 const csvCell = (v) => {
   const s = String(v ?? '');
@@ -380,20 +407,28 @@ const csvCell = (v) => {
 // since profiles were added are looked up once with getChat.
 async function sendUserList(env, chatId) {
   const missing = await env.DB.prepare(
-    'SELECT seen.chat_id FROM seen LEFT JOIN profiles p ON p.chat_id = seen.chat_id WHERE p.chat_id IS NULL LIMIT 40',
+    'SELECT seen.chat_id FROM seen LEFT JOIN people p ON p.chat_id = seen.chat_id WHERE p.name IS NULL LIMIT 40',
   ).all();
   for (const { chat_id } of missing.results) {
     const chat = await tg(env, 'getChat', { chat_id });
     if (chat.ok) await saveProfile(env, chat_id, chat.result);
   }
+  const mine = "FROM events e WHERE e.chat_id = seen.chat_id AND e.action <> 'reminder'";
   const { results } = await env.DB.prepare(
-    `SELECT seen.chat_id, p.username, p.name, u.sid, u.remind, seen.first, seen.last
-     FROM seen LEFT JOIN profiles p ON p.chat_id = seen.chat_id LEFT JOIN users u ON u.chat_id = seen.chat_id
+    `SELECT seen.chat_id, p.username, p.name, u.sid, u.remind, p.lang, p.premium, p.blocked, seen.first, seen.last,
+       (SELECT COUNT(*) ${mine}) AS requests,
+       (SELECT COUNT(*) ${mine} AND e.at >= datetime('now', '-7 days')) AS requests7,
+       (SELECT action ${mine} GROUP BY action ORDER BY COUNT(*) DESC LIMIT 1) AS favourite,
+       (SELECT COUNT(*) FROM events e WHERE e.chat_id = seen.chat_id AND e.action = 'reminder') AS reminded
+     FROM seen LEFT JOIN people p ON p.chat_id = seen.chat_id LEFT JOIN users u ON u.chat_id = seen.chat_id
      ORDER BY seen.first`,
   ).all();
-  const rows = [['telegram_id', 'username', 'name', 'student_number', 'reminders', 'first_seen_utc', 'last_seen_utc']];
+  const rows = [['telegram_id', 'username', 'name', 'student_number', 'reminders', 'language', 'premium', 'blocked_bot_utc',
+    'first_seen_utc', 'last_seen_utc', 'requests', 'requests_7d', 'favourite', 'reminders_received']];
   for (const r of results) {
-    rows.push([r.chat_id, r.username ? `@${r.username}` : '', r.name, r.sid, r.sid ? (r.remind ? 'on' : 'off') : '', r.first, r.last]);
+    rows.push([r.chat_id, r.username ? `@${r.username}` : '', r.name, r.sid, r.sid ? (r.remind ? 'on' : 'off') : '',
+      r.lang, r.premium == null ? '' : r.premium ? 'yes' : 'no', r.blocked, r.first, r.last,
+      r.requests, r.requests7, r.favourite, r.reminded]);
   }
   const form = new FormData();
   form.append('chat_id', String(chatId));
@@ -413,22 +448,59 @@ async function onButton(env, query) {
   return sendUserList(env, chatId);
 }
 
+const WEEK = "at >= datetime('now', '-7 days')";
+const REQUEST = "action <> 'reminder'";
+
 async function showStats(env, chatId) {
-  const r = await env.DB.prepare(`SELECT
-    (SELECT COUNT(*) FROM seen) AS started,
-    (SELECT COUNT(*) FROM users WHERE sid IS NOT NULL) AS saved,
-    (SELECT COUNT(*) FROM users WHERE sid IS NOT NULL AND remind = 1) AS reminders,
-    (SELECT COUNT(*) FROM seen WHERE first >= datetime('now', '-1 day')) AS newDay,
-    (SELECT COUNT(*) FROM seen WHERE first >= datetime('now', '-7 days')) AS newWeek,
-    (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-1 day')) AS activeDay,
-    (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-7 days')) AS activeWeek`).first();
+  const q = (sql) => env.DB.prepare(sql);
+  const [r, actions, hours, days, langs, modules] = await Promise.all([
+    q(`SELECT
+      (SELECT COUNT(*) FROM seen) AS started,
+      (SELECT COUNT(*) FROM users WHERE sid IS NOT NULL) AS saved,
+      (SELECT COUNT(*) FROM users WHERE sid IS NOT NULL AND remind = 1) AS reminders,
+      (SELECT COUNT(*) FROM seen WHERE first >= datetime('now', '-1 day')) AS newDay,
+      (SELECT COUNT(*) FROM seen WHERE first >= datetime('now', '-7 days')) AS newWeek,
+      (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-1 day')) AS activeDay,
+      (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-7 days')) AS activeWeek,
+      (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-30 days')) AS activeMonth,
+      (SELECT COUNT(*) FROM seen WHERE first < datetime('now', '-7 days')) AS older,
+      (SELECT COUNT(*) FROM seen WHERE first < datetime('now', '-7 days') AND last >= datetime('now', '-7 days')) AS cameBack,
+      (SELECT COUNT(*) FROM people WHERE blocked IS NOT NULL) AS blocked,
+      (SELECT COUNT(*) FROM people WHERE premium = 1) AS premium,
+      (SELECT COUNT(*) FROM events WHERE ${REQUEST} AND at >= datetime('now', '-1 day')) AS reqDay,
+      (SELECT COUNT(*) FROM events WHERE ${REQUEST} AND ${WEEK}) AS reqWeek,
+      (SELECT COUNT(*) FROM events WHERE action = 'reminder' AND at >= datetime('now', '-1 day')) AS remDay,
+      (SELECT COUNT(*) FROM events WHERE action = 'reminder' AND ${WEEK}) AS remWeek,
+      (SELECT min(at) FROM events) AS since`).first(),
+    q(`SELECT action AS k, COUNT(*) AS n FROM events WHERE ${REQUEST} AND ${WEEK} GROUP BY action ORDER BY n DESC`).all(),
+    q(`SELECT strftime('%H', at, '+${TZ_OFFSET_MIN} minutes') AS k, COUNT(*) AS n FROM events
+       WHERE ${REQUEST} AND ${WEEK} GROUP BY k ORDER BY n DESC LIMIT 3`).all(),
+    q(`SELECT date(at, '+${TZ_OFFSET_MIN} minutes') AS k, COUNT(DISTINCT chat_id) AS n FROM events
+       WHERE ${REQUEST} AND ${WEEK} GROUP BY k ORDER BY k`).all(),
+    q("SELECT coalesce(nullif(lang, ''), '?') AS k, COUNT(*) AS n FROM people GROUP BY k ORDER BY n DESC LIMIT 5").all(),
+    q(`SELECT s.code AS k, COUNT(DISTINCT u.sid) AS n FROM users u JOIN students st ON st.sid = u.sid,
+       json_each(st.sessions) j JOIN sessions s ON s.id = j.value
+       WHERE s.code IS NOT NULL GROUP BY s.code ORDER BY n DESC LIMIT 5`).all(),
+  ]);
+  const list = ({ results }, label = (k) => k) => results.map((x) => `${esc(label(x.k))} ${x.n}`).join(' · ') || '—';
   return send(env, chatId, [
     '📊 <b>Bot users</b>',
     `Opened the bot: <b>${r.started}</b>`,
     `Saved a student number: <b>${r.saved}</b> (reminders on: ${r.reminders})`,
     `New: ${r.newDay} in 24 h, ${r.newWeek} in 7 days`,
-    `Active: ${r.activeDay} in 24 h, ${r.activeWeek} in 7 days`,
-  ].join('\n'), { reply_markup: USERS_BUTTON });
+    `Active: ${r.activeDay} in 24 h, ${r.activeWeek} in 7 days, ${r.activeMonth} in 30 days`,
+    r.older ? `Came back after their first week: ${r.cameBack} of ${r.older} (${Math.round(r.cameBack / r.older * 100)}%)` : null,
+    `Blocked the bot: ${r.blocked} · Telegram Premium: ${r.premium}`,
+    `Languages: ${list(langs)}`,
+    '',
+    '📈 <b>Usage</b>' + (r.since ? ` (counted since ${esc(r.since.slice(0, 10))})` : ''),
+    `Requests: ${r.reqDay} in 24 h, ${r.reqWeek} in 7 days`,
+    `Reminders sent: ${r.remDay} in 24 h, ${r.remWeek} in 7 days`,
+    `Popular (7 days): ${list(actions)}`,
+    `Busiest hours (Astana): ${list(hours, (k) => `${k}:00`)}`,
+    `People per day: ${list(days, (k) => weekdayLabel(k).slice(0, 3))}`,
+    `Top modules: ${list(modules)}`,
+  ].filter((l) => l !== null).join('\n'), { reply_markup: USERS_BUTTON });
 }
 
 // ---------- Admin: Microsoft sign-in (device code) ----------

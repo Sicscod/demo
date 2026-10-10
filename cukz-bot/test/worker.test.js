@@ -90,6 +90,14 @@ test('a typed date or /date shows that day', async () => {
   assert.match(calls.at(-1).body.text, /Send a date like/);
 });
 
+test('a user who blocks the bot is marked', async () => {
+  const { env, say } = await setup();
+  await say('/today', { first_name: 'A' });
+  mock.method(globalThis, 'fetch', async () => Response.json({ ok: false, error_code: 403, description: 'Forbidden: bot was blocked by the user' }));
+  await say('/today');
+  assert.ok(env.DB.sqlite.prepare('SELECT blocked FROM people WHERE chat_id = 7').get().blocked);
+});
+
 test('/stats counts people for the admin only', async () => {
   const { env, calls, say } = await setup();
   await say('/stats');
@@ -106,7 +114,12 @@ test('the button under /stats sends the admin a CSV of everyone', async () => {
   const { env, calls, say } = await setup();
   env.DB.sqlite.exec("INSERT INTO kv (k, v) VALUES ('admin', '7')");
   env.DB.sqlite.exec("INSERT INTO seen (chat_id, first, last) VALUES (9, '2026-10-09 10:00:00', '2026-10-09 10:00:00')");
-  await say('/stats', { username: 'me', first_name: 'San', last_name: 'Zh' });
+  await say('/today', { username: 'me', first_name: 'San', last_name: 'Zh', language_code: 'ru' });
+  await say('/stats');
+  const stats = calls.at(-1).body.text;
+  assert.match(stats, /Popular \(7 days\): today 1/);
+  assert.match(stats, /Languages: ru 1/);
+  assert.match(stats, /Top modules: \w+ 1/);
   assert.equal(calls.at(-1).body.reply_markup.inline_keyboard[0][0].callback_data, 'users_csv');
 
   const press = async (fromId) => {
@@ -128,8 +141,8 @@ test('the button under /stats sends the admin a CSV of everyone', async () => {
   const bytes = new Uint8Array(await doc.body.document.arrayBuffer());
   assert.deepEqual([...bytes.slice(0, 3)], [0xef, 0xbb, 0xbf]); // BOM so Excel reads Cyrillic names
   const csv = await doc.body.document.text();
-  assert.match(csv, /^telegram_id,username,name,student_number,reminders/);
-  assert.match(csv, /\n9,,,,,2026-10-09 10:00:00/);
-  assert.match(csv, /\n7,@me,San Zh,10000001,on,/);
+  assert.match(csv, /^telegram_id,username,name,student_number,reminders,language,premium/);
+  assert.match(csv, /\n9,,,,,,,,2026-10-09 10:00:00,2026-10-09 10:00:00,0,0,,0/);
+  assert.match(csv, /\n7,@me,San Zh,10000001,on,ru,no,,[^,]+,[^,]+,1,1,today,0/);
   assert.ok(calls.some((c) => c.method === 'getChat'));
 });
