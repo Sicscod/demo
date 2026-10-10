@@ -89,3 +89,15 @@ test('a typed date or /date shows that day', async () => {
   await say('/date soon');
   assert.match(calls.at(-1).body.text, /Send a date like/);
 });
+
+test('/stats counts people for the admin only', async () => {
+  const { env, calls, say } = await setup();
+  await say('/stats');
+  assert.doesNotMatch(calls.at(-1).body.text, /Bot users/);
+  env.DB.sqlite.exec("INSERT INTO kv (k, v) VALUES ('admin', '7')");
+  await say('/stats');
+  const text = calls.at(-1).body.text;
+  assert.match(text, /Opened the bot: <b>1<\/b>/);
+  assert.match(text, /Saved a student number: <b>1<\/b> \(reminders on: 1\)/);
+  assert.match(text, /Active: 1 in 24 h/);
+});

@@ -133,6 +133,10 @@ async function handleUpdate(update, env) {
   const msg = update.message;
   if (!msg?.chat || msg.chat.type !== 'private') return;
   const chatId = msg.chat.id;
+  await env.DB.prepare(
+    `INSERT INTO seen (chat_id, first, last) VALUES (?, datetime('now'), datetime('now'))
+     ON CONFLICT(chat_id) DO UPDATE SET last = excluded.last`,
+  ).bind(chatId).run();
   const isAdmin = String(chatId) === (await kvGet(env, 'admin'));
 
   if (msg.document && isAdmin) return onTimetableFile(env, chatId, msg.document);
@@ -181,6 +185,7 @@ async function handleUpdate(update, env) {
       case '/login': return startMicrosoftLogin(env, chatId);
       case '/source': return setSource(env, chatId, args[0]);
       case '/status': return showStatus(env, chatId);
+      case '/stats': return showStats(env, chatId);
       case '/update': {
         await send(env, chatId, '⏳ Checking SharePoint…');
         const result = await autoUpdate(env, { force: true, quiet: true });
@@ -314,7 +319,8 @@ async function claimAdmin(env, chatId) {
     '• /source <i>link</i> — SharePoint link to the file (optional, found automatically)\n' +
     '• /update — check for a new timetable now\n' +
     '• Or send me <b>Student_Timetables.html</b> as a file.\n' +
-    '• /status — what is loaded');
+    '• /status — what is loaded\n' +
+    '• /stats — how many people use the bot');
 }
 
 async function onTimetableFile(env, chatId, doc) {
@@ -355,6 +361,24 @@ async function showStatus(env, chatId) {
       `last check ${esc(lastCheck || 'never')}`,
     lastError && `Last error: ${esc(lastError)}`,
   ].filter(Boolean).join('\n'));
+}
+
+async function showStats(env, chatId) {
+  const r = await env.DB.prepare(`SELECT
+    (SELECT COUNT(*) FROM seen) AS started,
+    (SELECT COUNT(*) FROM users WHERE sid IS NOT NULL) AS saved,
+    (SELECT COUNT(*) FROM users WHERE sid IS NOT NULL AND remind = 1) AS reminders,
+    (SELECT COUNT(*) FROM seen WHERE first >= datetime('now', '-1 day')) AS newDay,
+    (SELECT COUNT(*) FROM seen WHERE first >= datetime('now', '-7 days')) AS newWeek,
+    (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-1 day')) AS activeDay,
+    (SELECT COUNT(*) FROM seen WHERE last >= datetime('now', '-7 days')) AS activeWeek`).first();
+  return send(env, chatId, [
+    '📊 <b>Bot users</b>',
+    `Opened the bot: <b>${r.started}</b>`,
+    `Saved a student number: <b>${r.saved}</b> (reminders on: ${r.reminders})`,
+    `New: ${r.newDay} in 24 h, ${r.newWeek} in 7 days`,
+    `Active: ${r.activeDay} in 24 h, ${r.activeWeek} in 7 days`,
+  ].join('\n'));
 }
 
 // ---------- Admin: Microsoft sign-in (device code) ----------
