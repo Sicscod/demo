@@ -15,7 +15,7 @@ async function call(method, body) {
   return data.result;
 }
 
-await call('setWebhook', { url: `${url}/tg`, secret_token: secret, allowed_updates: ['message'] });
+await call('setWebhook', { url: `${url}/tg`, secret_token: secret, allowed_updates: ['message', 'callback_query'] });
 await call('setMyCommands', { commands: [
   { command: 'today', description: "Today's classes" },
   { command: 'tomorrow', description: "Tomorrow's classes" },

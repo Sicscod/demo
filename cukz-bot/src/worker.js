@@ -130,6 +130,7 @@ async function sessionsFor(env, sid, from, to) {
 // ---------- Updates ----------
 
 async function handleUpdate(update, env) {
+  if (update.callback_query) return onButton(env, update.callback_query);
   const msg = update.message;
   if (!msg?.chat || msg.chat.type !== 'private') return;
   const chatId = msg.chat.id;
@@ -137,6 +138,7 @@ async function handleUpdate(update, env) {
     `INSERT INTO seen (chat_id, first, last) VALUES (?, datetime('now'), datetime('now'))
      ON CONFLICT(chat_id) DO UPDATE SET last = excluded.last`,
   ).bind(chatId).run();
+  await saveProfile(env, chatId, msg.from);
   const isAdmin = String(chatId) === (await kvGet(env, 'admin'));
 
   if (msg.document && isAdmin) return onTimetableFile(env, chatId, msg.document);
@@ -186,6 +188,7 @@ async function handleUpdate(update, env) {
       case '/source': return setSource(env, chatId, args[0]);
       case '/status': return showStatus(env, chatId);
       case '/stats': return showStats(env, chatId);
+      case '/users': return sendUserList(env, chatId);
       case '/update': {
         await send(env, chatId, '⏳ Checking SharePoint…');
         const result = await autoUpdate(env, { force: true, quiet: true });
@@ -320,7 +323,8 @@ async function claimAdmin(env, chatId) {
     '• /update — check for a new timetable now\n' +
     '• Or send me <b>Student_Timetables.html</b> as a file.\n' +
     '• /status — what is loaded\n' +
-    '• /stats — how many people use the bot');
+    '• /stats — how many people use the bot\n' +
+    '• /users — file with everyone who uses the bot');
 }
 
 async function onTimetableFile(env, chatId, doc) {
@@ -363,6 +367,52 @@ async function showStatus(env, chatId) {
   ].filter(Boolean).join('\n'));
 }
 
+const saveProfile = (env, chatId, from) => from && env.DB.prepare(
+  'INSERT OR REPLACE INTO profiles (chat_id, username, name) VALUES (?, ?, ?)',
+).bind(chatId, from.username || '', [from.first_name, from.last_name].filter(Boolean).join(' ')).run();
+
+const csvCell = (v) => {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+// Admin: a CSV of everyone who has written to the bot. Names of people who have not written
+// since profiles were added are looked up once with getChat.
+async function sendUserList(env, chatId) {
+  const missing = await env.DB.prepare(
+    'SELECT seen.chat_id FROM seen LEFT JOIN profiles p ON p.chat_id = seen.chat_id WHERE p.chat_id IS NULL LIMIT 40',
+  ).all();
+  for (const { chat_id } of missing.results) {
+    const chat = await tg(env, 'getChat', { chat_id });
+    if (chat.ok) await saveProfile(env, chat_id, chat.result);
+  }
+  const { results } = await env.DB.prepare(
+    `SELECT seen.chat_id, p.username, p.name, u.sid, u.remind, seen.first, seen.last
+     FROM seen LEFT JOIN profiles p ON p.chat_id = seen.chat_id LEFT JOIN users u ON u.chat_id = seen.chat_id
+     ORDER BY seen.first`,
+  ).all();
+  const rows = [['telegram_id', 'username', 'name', 'student_number', 'reminders', 'first_seen_utc', 'last_seen_utc']];
+  for (const r of results) {
+    rows.push([r.chat_id, r.username ? `@${r.username}` : '', r.name, r.sid, r.sid ? (r.remind ? 'on' : 'off') : '', r.first, r.last]);
+  }
+  const form = new FormData();
+  form.append('chat_id', String(chatId));
+  form.append('caption', `👥 ${results.length} people`);
+  form.append('document', new Blob(['\ufeff' + rows.map((r) => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv' }),
+    `bot-users-${astanaNow().date}.csv`);
+  const sent = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: form })).json();
+  if (!sent.ok) return send(env, chatId, `❌ Could not send the file: ${esc(sent.description)}`);
+}
+
+const USERS_BUTTON = { inline_keyboard: [[{ text: '📄 Детальная статистика', callback_data: 'users_csv' }]] };
+
+async function onButton(env, query) {
+  await tg(env, 'answerCallbackQuery', { callback_query_id: query.id });
+  const chatId = query.message?.chat?.id;
+  if (query.data !== 'users_csv' || !chatId || String(query.from.id) !== (await kvGet(env, 'admin'))) return;
+  return sendUserList(env, chatId);
+}
+
 async function showStats(env, chatId) {
   const r = await env.DB.prepare(`SELECT
     (SELECT COUNT(*) FROM seen) AS started,
@@ -378,7 +428,7 @@ async function showStats(env, chatId) {
     `Saved a student number: <b>${r.saved}</b> (reminders on: ${r.reminders})`,
     `New: ${r.newDay} in 24 h, ${r.newWeek} in 7 days`,
     `Active: ${r.activeDay} in 24 h, ${r.activeWeek} in 7 days`,
-  ].join('\n'));
+  ].join('\n'), { reply_markup: USERS_BUTTON });
 }
 
 // ---------- Admin: Microsoft sign-in (device code) ----------

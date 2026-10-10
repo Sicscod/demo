@@ -22,12 +22,12 @@ async function setup({ renderOk = true } = {}) {
     const result = method === 'sendPhoto' ? { photo: [{ file_id: 'small' }, { file_id: 'big' }] } : {};
     return Response.json({ ok: true, result });
   });
-  const say = async (text) => {
+  const say = async (text, from) => {
     const waits = [];
     const req = new Request('https://bot.test/tg', {
       method: 'POST',
       headers: { 'X-Telegram-Bot-Api-Secret-Token': await webhookSecret(env) },
-      body: JSON.stringify({ message: { chat: { id: 7, type: 'private' }, text } }),
+      body: JSON.stringify({ message: { chat: { id: 7, type: 'private' }, from, text } }),
     });
     await worker.fetch(req, env, { waitUntil: (p) => waits.push(p) });
     await Promise.all(waits);
@@ -100,4 +100,36 @@ test('/stats counts people for the admin only', async () => {
   assert.match(text, /Opened the bot: <b>1<\/b>/);
   assert.match(text, /Saved a student number: <b>1<\/b> \(reminders on: 1\)/);
   assert.match(text, /Active: 1 in 24 h/);
+});
+
+test('the button under /stats sends the admin a CSV of everyone', async () => {
+  const { env, calls, say } = await setup();
+  env.DB.sqlite.exec("INSERT INTO kv (k, v) VALUES ('admin', '7')");
+  env.DB.sqlite.exec("INSERT INTO seen (chat_id, first, last) VALUES (9, '2026-10-09 10:00:00', '2026-10-09 10:00:00')");
+  await say('/stats', { username: 'me', first_name: 'San', last_name: 'Zh' });
+  assert.equal(calls.at(-1).body.reply_markup.inline_keyboard[0][0].callback_data, 'users_csv');
+
+  const press = async (fromId) => {
+    const req = new Request('https://bot.test/tg', {
+      method: 'POST',
+      headers: { 'X-Telegram-Bot-Api-Secret-Token': await webhookSecret(env) },
+      body: JSON.stringify({ callback_query: { id: 'q', from: { id: fromId }, data: 'users_csv', message: { chat: { id: fromId } } } }),
+    });
+    const waits = [];
+    await worker.fetch(req, env, { waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+  };
+  calls.length = 0;
+  await press(8);
+  assert.deepEqual(calls.map((c) => c.method), ['answerCallbackQuery']);
+
+  await press(7);
+  const doc = calls.find((c) => c.method === 'sendDocument');
+  const bytes = new Uint8Array(await doc.body.document.arrayBuffer());
+  assert.deepEqual([...bytes.slice(0, 3)], [0xef, 0xbb, 0xbf]); // BOM so Excel reads Cyrillic names
+  const csv = await doc.body.document.text();
+  assert.match(csv, /^telegram_id,username,name,student_number,reminders/);
+  assert.match(csv, /\n9,,,,,2026-10-09 10:00:00/);
+  assert.match(csv, /\n7,@me,San Zh,10000001,on,/);
+  assert.ok(calls.some((c) => c.method === 'getChat'));
 });

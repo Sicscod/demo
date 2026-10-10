@@ -23,3 +23,5 @@ CREATE TABLE IF NOT EXISTS images (k TEXT PRIMARY KEY, file_id TEXT NOT NULL);
 -- Everyone who has written to the bot (UTC times), for /stats
 CREATE TABLE IF NOT EXISTS seen (chat_id INTEGER PRIMARY KEY, first TEXT NOT NULL, last TEXT NOT NULL);
 INSERT OR IGNORE INTO seen (chat_id, first, last) SELECT chat_id, created, created FROM users WHERE created IS NOT NULL;
+-- Telegram username and name of everyone who has written to the bot, for the admin's /users file
+CREATE TABLE IF NOT EXISTS profiles (chat_id INTEGER PRIMARY KEY, username TEXT, name TEXT);
