@@ -1,6 +1,6 @@
 // Cardiff University Kazakhstan timetable bot (Cloudflare Worker).
 // Telegram webhook, a 5-minute cron for class reminders and Microsoft sign-in polling,
-// and a 30-minute cron that downloads Student_Timetables.html from SharePoint when it changes.
+// and a 3-hourly cron that downloads Student_Timetables.html from SharePoint when it changes.
 
 import {
   astanaNow, addDays, mondayOf, addMinutes, formatDay, formatWeek, formatReminder, isStudentId, esc,
@@ -13,7 +13,7 @@ const MS_TENANT = 'bdb74b30-9568-4856-bdbf-06759778fcbc'; // cf.ac.uk
 const MS_CLIENT = 'd3590ed6-52b3-4102-aeff-aad2292ab01c'; // Microsoft Office public client
 const MS_SCOPE = 'https://graph.microsoft.com/.default offline_access';
 const REMIND_MIN = 30;
-const UPDATE_CRON = '7,37 * * * *'; // must match wrangler.toml
+const UPDATE_CRON = '7 */3 * * *'; // must match wrangler.toml
 const FILE_NAME = 'Student_Timetables.html';
 
 const KEYBOARD = {
@@ -394,7 +394,7 @@ async function pollMicrosoftLogin(env) {
   }
   await kvSet(env, 'ms_refresh', data.refresh_token);
   return send(env, pending.chatId,
-    '✅ Signed in. I will check for a new timetable every 30 minutes. Send /update to load it right now.');
+    '✅ Signed in. I will check for a new timetable every 3 hours. Send /update to load it right now.');
 }
 
 // ---------- Automatic timetable updates from SharePoint ----------
@@ -476,7 +476,7 @@ export async function autoUpdate(env, { force = false, quiet = false }) {
     await kvSet(env, 'last_error', line);
     if (e.signedOut) await kvDel(env, 'ms_refresh');
     const admin = await kvGet(env, 'admin');
-    // Tell the admin once per new problem, not every 30 minutes.
+    // Tell the admin once per new problem, not every 3 hours.
     if (admin && !quiet && previous.slice(25) !== line.slice(25)) {
       await send(env, admin, `❌ Timetable update failed: ${esc(e.message)}${e.signedOut ? '\nSend /login to sign in again.' : ''}`);
     }

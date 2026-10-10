@@ -4,8 +4,8 @@ compatibility_date = "2026-08-01"
 
 [triggers]
 # Every 5 minutes: class reminders and Microsoft login polling.
-# Every 30 minutes (minutes 7 and 37): download the timetable from SharePoint if it changed (UPDATE_CRON in src/worker.js).
-crons = ["*/5 * * * *", "7,37 * * * *"]
+# Every 3 hours (minute 7): download the timetable from SharePoint if it changed (UPDATE_CRON in src/worker.js).
+crons = ["*/5 * * * *", "7 */3 * * *"]
 
 [vars]
 # Draws the timetable pictures (render/, deployed on Vercel). Empty: send text only.
