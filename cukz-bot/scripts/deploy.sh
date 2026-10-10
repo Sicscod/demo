@@ -4,6 +4,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 : "${TELEGRAM_TOKEN:?Set TELEGRAM_TOKEN}"
+# Check the token before anything else: a wrong one saved as the worker secret takes the bot offline.
+if ! curl -fsS "https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe" >/dev/null 2>&1; then
+  echo "Telegram does not accept this TELEGRAM_TOKEN. Copy the real token from @BotFather (/mybots → your bot → API Token). Nothing was deployed." >&2
+  exit 1
+fi
 ./scripts/ensure-d1.sh
 out=$(npx wrangler deploy 2>&1) || { echo "$out"; exit 1; }
 echo "$out"
