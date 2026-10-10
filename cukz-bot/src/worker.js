@@ -373,6 +373,14 @@ async function setSource(env, chatId, link) {
   return send(env, chatId, '✅ Source link saved.');
 }
 
+// '2026-10-10T07:26:30.000Z' -> '2026-10-10 12:26' (Astana)
+const astanaTime = (iso) => {
+  const ms = Date.parse(iso);
+  if (Number.isNaN(ms)) return iso;
+  const t = astanaNow(ms);
+  return `${t.date} ${t.time}`;
+};
+
 async function showStatus(env, chatId) {
   const [updated, loadedAt, source, refresh, lastError, lastCheck, users, students, sessions] = await Promise.all([
     kvGet(env, 'tt_updated'), kvGet(env, 'tt_loaded_at'), kvGet(env, 'source_url'), kvGet(env, 'ms_refresh'),
@@ -382,11 +390,12 @@ async function showStatus(env, chatId) {
     env.DB.prepare('SELECT COUNT(*) AS n FROM sessions').first(),
   ]);
   return send(env, chatId, [
-    `Timetable: ${esc(updated || '—')} (loaded ${esc(loadedAt || 'never')})`,
+    `Timetable: ${esc(updated || '—')} (loaded ${esc(loadedAt ? astanaTime(loadedAt) : 'never')})`,
     `Students: ${students.n}, classes: ${sessions.n}, bot users: ${users.n}`,
     `Auto-update: ${refresh ? 'signed in' : 'not signed in (/login)'}, ${source ? 'link set' : 'link found automatically'}, ` +
-      `last check ${esc(lastCheck || 'never')}`,
-    lastError && `Last error: ${esc(lastError)}`,
+      `last check ${esc(lastCheck ? astanaTime(lastCheck) : 'never')}`,
+    lastError && `Last error: ${esc(lastError.replace(/^\S+/, astanaTime))}`,
+    '(times are Astana)',
   ].filter(Boolean).join('\n'));
 }
 
@@ -403,6 +412,9 @@ const csvCell = (v) => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
+// SQL: a stored UTC time shown in Astana time, e.g. '2026-10-10 12:26'
+const ASTANA = (col) => `strftime('%Y-%m-%d %H:%M', ${col}, '+${TZ_OFFSET_MIN} minutes')`;
+
 // Admin: a CSV of everyone who has written to the bot. Names of people who have not written
 // since profiles were added are looked up once with getChat.
 async function sendUserList(env, chatId) {
@@ -415,7 +427,8 @@ async function sendUserList(env, chatId) {
   }
   const mine = "FROM events e WHERE e.chat_id = seen.chat_id AND e.action <> 'reminder'";
   const { results } = await env.DB.prepare(
-    `SELECT seen.chat_id, p.username, p.name, u.sid, u.remind, p.lang, p.premium, p.blocked, seen.first, seen.last,
+    `SELECT seen.chat_id, p.username, p.name, u.sid, u.remind, p.lang, p.premium,
+       ${ASTANA('p.blocked')} AS blocked, ${ASTANA('seen.first')} AS first, ${ASTANA('seen.last')} AS last,
        (SELECT COUNT(*) ${mine}) AS requests,
        (SELECT COUNT(*) ${mine} AND e.at >= datetime('now', '-7 days')) AS requests7,
        (SELECT action ${mine} GROUP BY action ORDER BY COUNT(*) DESC LIMIT 1) AS favourite,
@@ -423,8 +436,8 @@ async function sendUserList(env, chatId) {
      FROM seen LEFT JOIN people p ON p.chat_id = seen.chat_id LEFT JOIN users u ON u.chat_id = seen.chat_id
      ORDER BY seen.first`,
   ).all();
-  const rows = [['telegram_id', 'username', 'name', 'student_number', 'reminders', 'language', 'premium', 'blocked_bot_utc',
-    'first_seen_utc', 'last_seen_utc', 'requests', 'requests_7d', 'favourite', 'reminders_received']];
+  const rows = [['telegram_id', 'username', 'name', 'student_number', 'reminders', 'language', 'premium', 'blocked_bot_astana',
+    'first_seen_astana', 'last_seen_astana', 'requests', 'requests_7d', 'favourite', 'reminders_received']];
   for (const r of results) {
     rows.push([r.chat_id, r.username ? `@${r.username}` : '', r.name, r.sid, r.sid ? (r.remind ? 'on' : 'off') : '',
       r.lang, r.premium == null ? '' : r.premium ? 'yes' : 'no', r.blocked, r.first, r.last,
@@ -471,7 +484,7 @@ async function showStats(env, chatId) {
       (SELECT COUNT(*) FROM events WHERE ${REQUEST} AND ${WEEK}) AS reqWeek,
       (SELECT COUNT(*) FROM events WHERE action = 'reminder' AND at >= datetime('now', '-1 day')) AS remDay,
       (SELECT COUNT(*) FROM events WHERE action = 'reminder' AND ${WEEK}) AS remWeek,
-      (SELECT min(at) FROM events) AS since`).first(),
+      (SELECT ${ASTANA('min(at)')} FROM events) AS since`).first(),
     q(`SELECT action AS k, COUNT(*) AS n FROM events WHERE ${REQUEST} AND ${WEEK} GROUP BY action ORDER BY n DESC`).all(),
     q(`SELECT strftime('%H', at, '+${TZ_OFFSET_MIN} minutes') AS k, COUNT(*) AS n FROM events
        WHERE ${REQUEST} AND ${WEEK} GROUP BY k ORDER BY n DESC LIMIT 3`).all(),

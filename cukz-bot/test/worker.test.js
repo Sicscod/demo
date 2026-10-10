@@ -142,7 +142,7 @@ test('the button under /stats sends the admin a CSV of everyone', async () => {
   assert.deepEqual([...bytes.slice(0, 3)], [0xef, 0xbb, 0xbf]); // BOM so Excel reads Cyrillic names
   const csv = await doc.body.document.text();
   assert.match(csv, /^telegram_id,username,name,student_number,reminders,language,premium/);
-  assert.match(csv, /\n9,,,,,,,,2026-10-09 10:00:00,2026-10-09 10:00:00,0,0,,0/);
+  assert.match(csv, /\n9,,,,,,,,2026-10-09 15:00,2026-10-09 15:00,0,0,,0/);
   assert.match(csv, /\n7,@me,San Zh,10000001,on,ru,no,,[^,]+,[^,]+,1,1,today,0/);
   assert.ok(calls.some((c) => c.method === 'getChat'));
 });
