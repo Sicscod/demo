@@ -36,3 +36,6 @@ CREATE TABLE IF NOT EXISTS people (
 CREATE TABLE IF NOT EXISTS events (chat_id INTEGER NOT NULL, at TEXT NOT NULL DEFAULT (datetime('now')), action TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS events_at ON events(at);
 CREATE INDEX IF NOT EXISTS events_chat ON events(chat_id);
+-- Text people sent, only when the admin turned it on with /logmessages; kept 90 days
+CREATE TABLE IF NOT EXISTS messages (chat_id INTEGER NOT NULL, at TEXT NOT NULL DEFAULT (datetime('now')), text TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS messages_at ON messages(at);

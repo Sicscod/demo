@@ -52,7 +52,10 @@ export default {
   async scheduled(event, env, ctx) {
     if (event.cron === UPDATE_CRON) {
       ctx.waitUntil(autoUpdate(env, {}));
-      ctx.waitUntil(env.DB.prepare("DELETE FROM events WHERE at < datetime('now', '-90 days')").run());
+      ctx.waitUntil(env.DB.batch([
+        env.DB.prepare("DELETE FROM events WHERE at < datetime('now', '-90 days')"),
+        env.DB.prepare("DELETE FROM messages WHERE at < datetime('now', '-90 days')"),
+      ]));
     }
     else ctx.waitUntil(Promise.all([sendReminders(env), pollMicrosoftLogin(env)]));
   },
@@ -164,6 +167,12 @@ async function handleUpdate(update, env) {
   const action = isStudentId(text) ? 'student_number' : parseDate(text, astanaNow().date) ? 'date'
     : ACTIONS[command] || (isAdmin && command.startsWith('/') ? null : 'other');
   if (action) await env.DB.prepare('INSERT INTO events (chat_id, action) VALUES (?, ?)').bind(chatId, action).run();
+  if (action && text) {
+    const mode = await kvGet(env, 'log_messages'); // 'other' (messages the bot did not understand), 'all' or off
+    if (mode === 'all' || (mode === 'other' && action === 'other')) {
+      await env.DB.prepare('INSERT INTO messages (chat_id, text) VALUES (?, ?)').bind(chatId, text.slice(0, 1000)).run();
+    }
+  }
 
   if (isStudentId(text)) return setStudent(env, chatId, text);
   const typedDate = parseDate(text, astanaNow().date);
@@ -207,6 +216,8 @@ async function handleUpdate(update, env) {
       case '/status': return showStatus(env, chatId);
       case '/stats': return showStats(env, chatId);
       case '/users': return sendUserList(env, chatId);
+      case '/messages': return sendMessageLog(env, chatId);
+      case '/logmessages': return setMessageLog(env, chatId, args[0]);
       case '/update': {
         await send(env, chatId, '⏳ Checking SharePoint…');
         const result = await autoUpdate(env, { force: true, quiet: true });
@@ -347,7 +358,8 @@ async function claimAdmin(env, chatId) {
     '• Or send me <b>Student_Timetables.html</b> as a file.\n' +
     '• /status — what is loaded\n' +
     '• /stats — how many people use the bot\n' +
-    '• /users — file with everyone who uses the bot');
+    '• /users — file with everyone who uses the bot\n' +
+    '• /logmessages — save what people write (off by default), /messages — get them as a file');
 }
 
 async function onTimetableFile(env, chatId, doc) {
@@ -443,22 +455,55 @@ async function sendUserList(env, chatId) {
       r.lang, r.premium == null ? '' : r.premium ? 'yes' : 'no', r.blocked, r.first, r.last,
       r.requests, r.requests7, r.favourite, r.reminded]);
   }
+  return sendCsv(env, chatId, rows, `👥 ${results.length} people`, `bot-users-${astanaNow().date}.csv`);
+}
+
+// Admin: a CSV of the saved messages (see /logmessages), newest first.
+async function sendMessageLog(env, chatId) {
+  const mode = await kvGet(env, 'log_messages');
+  const { results } = await env.DB.prepare(
+    `SELECT ${ASTANA('m.at')} AS at, m.chat_id, p.username, p.name, m.text
+     FROM messages m LEFT JOIN people p ON p.chat_id = m.chat_id ORDER BY m.at DESC LIMIT 5000`,
+  ).all();
+  if (!results.length) {
+    return send(env, chatId, mode === 'other' || mode === 'all' ? 'No saved messages yet.'
+      : 'Messages are not being saved. Turn it on with /logmessages other (only messages the bot did not understand) or /logmessages all.');
+  }
+  const rows = [['time_astana', 'telegram_id', 'username', 'name', 'text']];
+  for (const r of results) rows.push([r.at, r.chat_id, r.username ? `@${r.username}` : '', r.name, r.text]);
+  return sendCsv(env, chatId, rows, `💬 ${results.length} messages`, `bot-messages-${astanaNow().date}.csv`);
+}
+
+async function setMessageLog(env, chatId, mode) {
+  mode = (mode || '').toLowerCase();
+  if (!['other', 'all', 'off'].includes(mode)) {
+    return send(env, chatId, `Saving messages: <b>${esc((await kvGet(env, 'log_messages')) || 'off')}</b>\n` +
+      '/logmessages other — only messages the bot did not understand\n/logmessages all — everything\n/logmessages off');
+  }
+  await kvSet(env, 'log_messages', mode);
+  return send(env, chatId, `✅ Saving messages: <b>${mode}</b>. They are kept 90 days; get them with the 💬 button under /stats.`);
+}
+
+async function sendCsv(env, chatId, rows, caption, filename) {
   const form = new FormData();
   form.append('chat_id', String(chatId));
-  form.append('caption', `👥 ${results.length} people`);
-  form.append('document', new Blob(['\ufeff' + rows.map((r) => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv' }),
-    `bot-users-${astanaNow().date}.csv`);
+  form.append('caption', caption);
+  form.append('document', new Blob(['\ufeff' + rows.map((r) => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv' }), filename);
   const sent = await (await fetch(`https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: form })).json();
   if (!sent.ok) return send(env, chatId, `❌ Could not send the file: ${esc(sent.description)}`);
 }
 
-const USERS_BUTTON = { inline_keyboard: [[{ text: '📄 Детальная статистика', callback_data: 'users_csv' }]] };
+const USERS_BUTTON = { inline_keyboard: [[
+  { text: '📄 Детальная статистика', callback_data: 'users_csv' },
+  { text: '💬 Сообщения', callback_data: 'messages_csv' },
+]] };
 
 async function onButton(env, query) {
   await tg(env, 'answerCallbackQuery', { callback_query_id: query.id });
   const chatId = query.message?.chat?.id;
-  if (query.data !== 'users_csv' || !chatId || String(query.from.id) !== (await kvGet(env, 'admin'))) return;
-  return sendUserList(env, chatId);
+  if (!chatId || String(query.from.id) !== (await kvGet(env, 'admin'))) return;
+  if (query.data === 'users_csv') return sendUserList(env, chatId);
+  if (query.data === 'messages_csv') return sendMessageLog(env, chatId);
 }
 
 const WEEK = "at >= datetime('now', '-7 days')";

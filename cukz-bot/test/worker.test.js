@@ -146,3 +146,18 @@ test('the button under /stats sends the admin a CSV of everyone', async () => {
   assert.match(csv, /\n7,@me,San Zh,10000001,on,ru,no,,[^,]+,[^,]+,1,1,today,0/);
   assert.ok(calls.some((c) => c.method === 'getChat'));
 });
+
+test('messages are saved only after the admin turns it on', async () => {
+  const { env, calls, say } = await setup();
+  env.DB.sqlite.exec("INSERT INTO kv (k, v) VALUES ('admin', '7')");
+  await say('hello?');
+  assert.equal(env.DB.sqlite.prepare('SELECT COUNT(*) AS n FROM messages').get().n, 0);
+  await say('/logmessages other');
+  await say('where is room 2.14?');
+  await say('/today');
+  assert.deepEqual(env.DB.sqlite.prepare('SELECT text FROM messages').all().map((r) => r.text), ['where is room 2.14?']);
+  calls.length = 0;
+  await say('/messages');
+  const doc = calls.find((c) => c.method === 'sendDocument');
+  assert.match(await doc.body.document.text(), /^time_astana,telegram_id,username,name,text\n[^,]+,7,,,where is room 2\.14\?$/);
+});
