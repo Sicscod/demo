@@ -158,6 +158,22 @@ test('messages are saved only after the admin turns it on', async () => {
   assert.deepEqual(env.DB.sqlite.prepare('SELECT text FROM messages').all().map((r) => r.text), ['where is room 2.14?']);
   calls.length = 0;
   await say('/messages');
+  const list = calls.at(-1).body.reply_markup.inline_keyboard;
+  assert.deepEqual(list[0][0], { text: '7 · 1', callback_data: 'chat:7' });
+
+  const press = async (data) => {
+    const req = new Request('https://bot.test/tg', {
+      method: 'POST',
+      headers: { 'X-Telegram-Bot-Api-Secret-Token': await webhookSecret(env) },
+      body: JSON.stringify({ callback_query: { id: 'q', from: { id: 7 }, data, message: { message_id: 1, chat: { id: 7 } } } }),
+    });
+    const waits = [];
+    await worker.fetch(req, env, { waitUntil: (p) => waits.push(p) });
+    await Promise.all(waits);
+  };
+  await press('chat:7');
+  assert.match(calls.at(-1).body.text, /student 10000001\n\n<code>\d\d\.\d\d \d\d:\d\d<\/code> where is room 2\.14\?/);
+  await press('messages_csv');
   const doc = calls.find((c) => c.method === 'sendDocument');
   assert.match(await doc.body.document.text(), /^time_astana,telegram_id,username,name,text\n[^,]+,7,,,where is room 2\.14\?$/);
 });

@@ -216,7 +216,7 @@ async function handleUpdate(update, env) {
       case '/status': return showStatus(env, chatId);
       case '/stats': return showStats(env, chatId);
       case '/users': return sendUserList(env, chatId);
-      case '/messages': return sendMessageLog(env, chatId);
+      case '/messages': return showChatList(env, chatId, 0);
       case '/logmessages': return setMessageLog(env, chatId, args[0]);
       case '/update': {
         await send(env, chatId, '⏳ Checking SharePoint…');
@@ -359,7 +359,7 @@ async function claimAdmin(env, chatId) {
     '• /status — what is loaded\n' +
     '• /stats — how many people use the bot\n' +
     '• /users — file with everyone who uses the bot\n' +
-    '• /logmessages — save what people write (off by default), /messages — get them as a file');
+    '• /logmessages — save what people write (off by default), /messages — read them person by person');
 }
 
 async function onTimetableFile(env, chatId, doc) {
@@ -474,6 +474,64 @@ async function sendMessageLog(env, chatId) {
   return sendCsv(env, chatId, rows, `💬 ${results.length} messages`, `bot-messages-${astanaNow().date}.csv`);
 }
 
+const PER_PAGE = 8;
+const personLabel = (r) => r.name || (r.username ? `@${r.username}` : String(r.chat_id));
+
+// Admin: everyone who has saved messages, one button each, newest conversation first.
+async function showChatList(env, chatId, page, messageId) {
+  const { results } = await env.DB.prepare(
+    `SELECT m.chat_id, p.username, p.name, COUNT(*) AS n, max(m.at) AS lastAt
+     FROM messages m LEFT JOIN people p ON p.chat_id = m.chat_id
+     GROUP BY m.chat_id ORDER BY lastAt DESC LIMIT ? OFFSET ?`,
+  ).bind(PER_PAGE + 1, page * PER_PAGE).all();
+  const mode = (await kvGet(env, 'log_messages')) || 'off';
+  if (!results.length && page === 0) {
+    return send(env, chatId, `No saved messages yet (saving: <b>${esc(mode)}</b>, change with /logmessages).`);
+  }
+  const keyboard = results.slice(0, PER_PAGE).map((r) => [{ text: `${personLabel(r)} · ${r.n}`, callback_data: `chat:${r.chat_id}` }]);
+  const nav = [];
+  if (page > 0) nav.push({ text: '◀️', callback_data: `msgs:${page - 1}` });
+  if (results.length > PER_PAGE) nav.push({ text: '▶️', callback_data: `msgs:${page + 1}` });
+  if (nav.length) keyboard.push(nav);
+  keyboard.push([{ text: '📄 Всё одним файлом', callback_data: 'messages_csv' }]);
+  const text = `💬 <b>Messages</b> (saving: ${esc(mode)}). Tap a person:`;
+  if (messageId) {
+    const edited = await tg(env, 'editMessageText', {
+      chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: { inline_keyboard: keyboard },
+    });
+    if (edited.ok) return;
+  }
+  return send(env, chatId, text, { reply_markup: { inline_keyboard: keyboard } });
+}
+
+// Admin: one person's last messages, oldest first, fitted into a Telegram message.
+async function showUserChat(env, chatId, userId, messageId) {
+  const [person, { results }] = await Promise.all([
+    env.DB.prepare(
+      'SELECT p.username, p.name, u.sid FROM seen s LEFT JOIN people p ON p.chat_id = s.chat_id LEFT JOIN users u ON u.chat_id = s.chat_id WHERE s.chat_id = ?',
+    ).bind(userId).first(),
+    env.DB.prepare(
+      `SELECT ${ASTANA('at')} AS at, text FROM messages WHERE chat_id = ? ORDER BY at DESC LIMIT 100`,
+    ).bind(userId).all(),
+  ]);
+  const head = [
+    `💬 <b>${esc(person?.name || String(userId))}</b>`,
+    person?.username ? `@${esc(person.username)}` : null,
+    person?.sid ? `student ${esc(person.sid)}` : null,
+  ].filter(Boolean).join(' · ');
+  const lines = [];
+  let size = head.length + 50;
+  for (const m of results) { // newest first, so the newest survive the length limit
+    const line = `<code>${m.at.slice(5).replace('-', '.')}</code> ${esc(m.text)}`;
+    if (size + line.length > 3900) break;
+    lines.unshift(line);
+    size += line.length + 1;
+  }
+  return send(env, chatId, [head, '', ...(lines.length ? lines : ['No messages.'])].join('\n'), {
+    reply_markup: { inline_keyboard: [[{ text: '⬅️ Back to list', callback_data: 'msgs:0' }]] },
+  });
+}
+
 async function setMessageLog(env, chatId, mode) {
   mode = (mode || '').toLowerCase();
   if (!['other', 'all', 'off'].includes(mode)) {
@@ -481,7 +539,7 @@ async function setMessageLog(env, chatId, mode) {
       '/logmessages other — only messages the bot did not understand\n/logmessages all — everything\n/logmessages off');
   }
   await kvSet(env, 'log_messages', mode);
-  return send(env, chatId, `✅ Saving messages: <b>${mode}</b>. They are kept 90 days; get them with the 💬 button under /stats.`);
+  return send(env, chatId, `✅ Saving messages: <b>${mode}</b>. They are kept 90 days; read them with the 💬 button under /stats.`);
 }
 
 async function sendCsv(env, chatId, rows, caption, filename) {
@@ -495,7 +553,7 @@ async function sendCsv(env, chatId, rows, caption, filename) {
 
 const USERS_BUTTON = { inline_keyboard: [[
   { text: '📄 Детальная статистика', callback_data: 'users_csv' },
-  { text: '💬 Сообщения', callback_data: 'messages_csv' },
+  { text: '💬 Сообщения', callback_data: 'msgs:0' },
 ]] };
 
 async function onButton(env, query) {
@@ -504,6 +562,9 @@ async function onButton(env, query) {
   if (!chatId || String(query.from.id) !== (await kvGet(env, 'admin'))) return;
   if (query.data === 'users_csv') return sendUserList(env, chatId);
   if (query.data === 'messages_csv') return sendMessageLog(env, chatId);
+  const [kind, arg] = query.data.split(':');
+  if (kind === 'msgs') return showChatList(env, chatId, Number(arg) || 0, query.message.message_id);
+  if (kind === 'chat') return showUserChat(env, chatId, Number(arg), query.message.message_id);
 }
 
 const WEEK = "at >= datetime('now', '-7 days')";
