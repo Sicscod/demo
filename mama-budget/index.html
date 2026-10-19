@@ -435,7 +435,7 @@ function loadScript(src) {
 }
 
 /* ---------- Состояние ---------- */
-const PLAN_MONTHS_AHEAD = 12;
+const MONTHS_AHEAD = 12; // насколько месяцев вперёд можно листать
 const state = {
   month: monthStart(new Date()),
   txs: [], prevTxs: [], plans: [], carry: 0,
@@ -468,9 +468,7 @@ const byCategory = (arr, type) => {
 /* ---------- Отрисовка ---------- */
 function render() {
   $('#monthTitle').textContent = monthName(state.month);
-  // на вкладке «Постоянные» можно смотреть вперёд, на остальных — только до текущего месяца
-  const maxMonth = state.tab === 'plans' ? addMonths(new Date(), PLAN_MONTHS_AHEAD) : monthStart(new Date());
-  $('#nextM').disabled = state.month >= maxMonth;
+  $('#nextM').disabled = state.month >= addMonths(new Date(), MONTHS_AHEAD);
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === state.tab));
   $('#tab-home').classList.toggle('hidden', state.tab !== 'home');
   $('#tab-stats').classList.toggle('hidden', state.tab !== 'stats');
@@ -772,9 +770,10 @@ function openSheet(type, tx = null) {
   state.form = { type: tx ? tx.type : type, category: tx ? tx.category : null };
   $('#amount').value = tx ? String(Number(tx.amount)) : '';
   $('#note').value = tx?.note || '';
-  const inMonth = +state.month === +monthStart(new Date());
-  $('#date').value = tx ? tx.date : (inMonth ? todayStr() : ymd(monthEnd(state.month)));
-  $('#date').max = todayStr();
+  const cur = monthStart(new Date());
+  // текущий месяц — сегодня, прошлый — последний день, будущий — первое число
+  $('#date').value = tx ? tx.date : (+state.month === +cur ? todayStr() : ymd(state.month > cur ? state.month : monthEnd(state.month)));
+  $('#date').max = ymd(monthEnd(addMonths(cur, MONTHS_AHEAD)));
   $('#delBtn').classList.toggle('hidden', !tx);
   $('#sheetErr').textContent = '';
   renderCats();
@@ -829,13 +828,7 @@ document.addEventListener('click', e => {
   if (!t) return;
   if (t.dataset.add) openSheet(t.dataset.add);
   else if (t.dataset.id) openSheet(null, state.txs.find(x => String(x.id) === t.dataset.id));
-  else if (t.dataset.tab) {
-    state.tab = t.dataset.tab;
-    // будущие месяцы есть только в «Постоянных»; на других вкладках возвращаемся в текущий
-    if (state.tab !== 'plans' && state.month > monthStart(new Date())) { state.month = monthStart(new Date()); refresh(); }
-    else render();
-    window.scrollTo(0, 0);
-  }
+  else if (t.dataset.tab) { state.tab = t.dataset.tab; render(); window.scrollTo(0, 0); }
   else if (t.dataset.type) { state.form.type = t.dataset.type; state.form.category = null; renderCats(); }
   else if (t.dataset.cat) { state.form.category = t.dataset.cat; renderCats(); }
   else if (t.dataset.pay) togglePay(t.dataset.pay);
