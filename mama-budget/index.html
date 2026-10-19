@@ -435,6 +435,7 @@ function loadScript(src) {
 }
 
 /* ---------- Состояние ---------- */
+const PLAN_MONTHS_AHEAD = 12;
 const state = {
   month: monthStart(new Date()),
   txs: [], prevTxs: [], plans: [], carry: 0,
@@ -467,7 +468,9 @@ const byCategory = (arr, type) => {
 /* ---------- Отрисовка ---------- */
 function render() {
   $('#monthTitle').textContent = monthName(state.month);
-  $('#nextM').disabled = state.month >= monthStart(new Date());
+  // на вкладке «Постоянные» можно смотреть вперёд, на остальных — только до текущего месяца
+  const maxMonth = state.tab === 'plans' ? addMonths(new Date(), PLAN_MONTHS_AHEAD) : monthStart(new Date());
+  $('#nextM').disabled = state.month >= maxMonth;
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === state.tab));
   $('#tab-home').classList.toggle('hidden', state.tab !== 'home');
   $('#tab-stats').classList.toggle('hidden', state.tab !== 'stats');
@@ -603,6 +606,7 @@ function dueInfo(p) {
     return { cls: 'ok', text: `${p.type === 'income' ? 'получено' : 'оплачено'} ${D} ${M_GEN[M - 1]}` };
   }
   const now = new Date(), cur = monthStart(now);
+  if (state.month > cur) return { cls: '', text: p.type === 'income' ? `ожидается ${p.day} числа` : `до ${p.day} числа` };
   if (p.type === 'income') {
     if (state.month < cur) return { cls: 'soon', text: 'не отмечено' };
     const l = p.day - now.getDate();
@@ -649,6 +653,7 @@ function renderPlans() {
   const amt = p => Number(p.paidTx ? p.paidTx.amount : p.amount);
   const isFuture = state.month > monthStart(new Date());
   let html = '';
+  if (isFuture && all.length) html += `<p class="hint" style="margin-top:0">Это план на ${esc(monthNameShort(state.month))}. Если оплатите заранее — поставьте галочку.</p>`;
   if (!all.length) {
     html += `<div class="card"><h2>Постоянные платежи и доходы</h2>
       <p class="hint">Ипотека, кредиты, коммуналка — и зарплата, пенсия. Добавьте один раз, и они будут появляться здесь каждый месяц. Когда оплатите или деньги придут — поставьте галочку, и сумма сама попадёт в расходы или приход.</p></div>`;
@@ -674,7 +679,7 @@ function renderPlans() {
     </div>` + planRows(exp);
   }
   if (all.length) html += `<p class="hint">Нажмите на кружок, когда оплатите или получите деньги. Нажмите на название, чтобы изменить сумму или дату.</p>`;
-  if (!isFuture) html += `<div class="actions"><button class="btn btn-ghost" style="margin:0" data-newplan="expense">＋ Платёж</button><button class="btn btn-ghost" style="margin:0" data-newplan="income">＋ Доход</button></div>`;
+  html += `<div class="actions"><button class="btn btn-ghost" style="margin:0" data-newplan="expense">＋ Платёж</button><button class="btn btn-ghost" style="margin:0" data-newplan="income">＋ Доход</button></div>`;
   $('#tab-plans').innerHTML = html;
 }
 async function togglePay(id) {
@@ -824,7 +829,13 @@ document.addEventListener('click', e => {
   if (!t) return;
   if (t.dataset.add) openSheet(t.dataset.add);
   else if (t.dataset.id) openSheet(null, state.txs.find(x => String(x.id) === t.dataset.id));
-  else if (t.dataset.tab) { state.tab = t.dataset.tab; render(); window.scrollTo(0, 0); }
+  else if (t.dataset.tab) {
+    state.tab = t.dataset.tab;
+    // будущие месяцы есть только в «Постоянных»; на других вкладках возвращаемся в текущий
+    if (state.tab !== 'plans' && state.month > monthStart(new Date())) { state.month = monthStart(new Date()); refresh(); }
+    else render();
+    window.scrollTo(0, 0);
+  }
   else if (t.dataset.type) { state.form.type = t.dataset.type; state.form.category = null; renderCats(); }
   else if (t.dataset.cat) { state.form.category = t.dataset.cat; renderCats(); }
   else if (t.dataset.pay) togglePay(t.dataset.pay);
