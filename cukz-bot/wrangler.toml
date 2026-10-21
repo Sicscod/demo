@@ -1,0 +1,17 @@
+name = "cukz-bot"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+[triggers]
+# Every 5 minutes: class reminders and Microsoft login polling.
+# Every 3 hours (minute 7): download the timetable from SharePoint if it changed (UPDATE_CRON in src/worker.js).
+crons = ["*/5 * * * *", "7 */3 * * *"]
+
+[vars]
+# Draws the timetable pictures (render/, deployed on Vercel). Empty: send text only.
+RENDER_URL = "https://cukz-render.vercel.app/api/render"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cukz-bot"
+database_id = "0c329066-0f08-47b2-bc25-437850fefb1e" # kept in sync by scripts/ensure-d1.sh
