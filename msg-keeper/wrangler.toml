@@ -1,0 +1,12 @@
+name = "msg-keeper"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+[triggers]
+# Once a day: forget messages older than KEEP_DAYS (src/worker.js).
+crons = ["17 21 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "msg-keeper"
+database_id = "00000000-0000-0000-0000-000000000000" # kept in sync by scripts/ensure-d1.sh
