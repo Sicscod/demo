@@ -8,4 +8,4 @@ crons = ["*/5 * * * *"]
 
 [[kv_namespaces]]
 binding = "KV"
-id = "" # filled in by scripts/ensure-kv.sh
+id = "00000000000000000000000000000000" # real id filled in by scripts/ensure-kv.sh

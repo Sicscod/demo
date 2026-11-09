@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Creates the wake-bot KV namespace if needed and writes its id into wrangler.toml.
 set -euo pipefail
+# wrangler.toml starts with a placeholder id because wrangler refuses to read a config with an empty one.
 cd "$(dirname "$0")/.."
 find_id='const l=JSON.parse(require("fs").readFileSync(0,"utf8"));const n=l.find(x=>x.title==="wake-bot"||x.title.endsWith("-wake-bot"));console.log(n?n.id:"")'
 id=$(npx wrangler kv namespace list | node -e "$find_id")
