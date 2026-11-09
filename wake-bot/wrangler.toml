@@ -1,0 +1,11 @@
+name = "wake-bot"
+main = "src/worker.js"
+compatibility_date = "2026-08-01"
+
+[triggers]
+# Every 5 minutes: tell her if the alarm ran out without him waking up.
+crons = ["*/5 * * * *"]
+
+[[kv_namespaces]]
+binding = "KV"
+id = "" # filled in by scripts/ensure-kv.sh
