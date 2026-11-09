@@ -165,3 +165,37 @@ test('Telegram webhook without the secret is rejected', async () => {
   const res = await worker.fetch(new Request('https://wake.test/tg', { method: 'POST', body: '{}' }), t.env, { waitUntil() {} });
   assert.equal(res.status, 403);
 });
+
+test('«Позвать» button sends an urgent alarm, and what she writes is passed on', async () => {
+  const t = setup();
+  await t.pair();
+  await t.say(HER, '📣 Позвать');
+  const [p] = t.pushes();
+  assert.equal(p.priority, 2);
+  assert.match(p.title, /зовёт тебя/);
+  assert.match(t.sent(HIM)[0], /зовёт тебя/);
+  await t.say(HER, 'потеряла ключи');
+  assert.match(t.sent(HIM).at(-1), /Она пишет: потеряла ключи/);
+  assert.match(t.sent(HER).at(-1), /Передал/);
+  await t.ack('r1');
+  assert.match(t.sent(HER).at(-1), /Он увидел/);
+});
+
+test('urgent right after a sleepless alarm replaces it; not the other way round', async () => {
+  const t = setup();
+  await t.pair();
+  await t.say(HER, '🌙 Не спится');
+  await t.say(HER, '📣 Позвать');
+  assert.equal(t.pushes().length, 2);
+  assert.ok(t.calls.some((c) => c.pushover === 'receipts/r1/cancel.json'));
+  await t.say(HER, '🌙 Не спится');
+  assert.equal(t.pushes().length, 2);
+});
+
+test('her text without an alarm is not forwarded', async () => {
+  const t = setup();
+  await t.pair();
+  await t.say(HER, 'привет');
+  assert.deepEqual(t.sent(HIM), []);
+  assert.deepEqual(t.pushes(), []);
+});

@@ -5,6 +5,7 @@ loudly through silent mode and Sleep focus until he taps *Acknowledge*. Then she
 
 - The ring comes from **Pushover** emergency priority (Critical Alert on iOS). A plain Telegram
   message can't ring through silent mode, and bots can't call.
+- **📣 Позвать** does the same for daytime "he isn't answering and she needs something"; while it rings, whatever she writes is forwarded to him.
 - The alarm repeats every 30 s for up to 30 min. She can cancel it. If he doesn't wake, she is told.
 - Only two people can use it: the first `/start` is the owner, the invite link he gets adds her.
   Everyone else is ignored. `/invite` makes a new link and disconnects the old one.

@@ -8,9 +8,10 @@ const EXPIRE_SEC = 30 * 60; // and gives up after this long
 const COOLDOWN_SEC = 60; // a second press within a minute doesn't start a second alarm
 
 const BTN_WAKE = '🌙 Не спится';
+const BTN_URGENT = '📣 Позвать';
 const BTN_CANCEL = 'Уже не надо';
 
-const PARTNER_KEYBOARD = { keyboard: [[{ text: BTN_WAKE }]], resize_keyboard: true, is_persistent: true };
+const PARTNER_KEYBOARD = { keyboard: [[{ text: BTN_WAKE }, { text: BTN_URGENT }]], resize_keyboard: true, is_persistent: true };
 
 export default {
   async fetch(req, env, ctx) {
@@ -83,9 +84,17 @@ async function handleUpdate(update, env, origin) {
   if (id === owner) return handleOwner(env, id, text, partner, origin);
 
   if (id === partner) {
-    if (text === BTN_WAKE || text === '/wake') return wake(env, { owner, partner, origin, name: msg.from.first_name });
+    const name = msg.from.first_name;
+    if (text === BTN_WAKE || text === '/wake') return wake(env, { owner, partner, origin, name, urgent: false });
+    if (text === BTN_URGENT || text === '/urgent') return wake(env, { owner, partner, origin, name, urgent: true });
     if (text.startsWith('/start')) return welcomePartner(env, id);
-    return send(env, id, `Если не спится и хочешь, чтобы он был рядом, нажми «${BTN_WAKE}» внизу.`, { reply_markup: PARTNER_KEYBOARD });
+    // While the alarm rings, whatever she writes goes to him.
+    const alarm = await getJson(env, 'alarm');
+    if (alarm && !alarm.test && (text || msg.caption)) {
+      await send(env, owner, `💬 Она пишет: ${esc(text || msg.caption)}`);
+      return send(env, id, 'Передал ему 💛');
+    }
+    return send(env, id, `«${BTN_WAKE}», если не спится и хочешь, чтобы он был рядом.\n«${BTN_URGENT}», если он не отвечает, а тебе что-то нужно.`, { reply_markup: PARTNER_KEYBOARD });
   }
 
   // Someone opening the invite link becomes the partner (once).
@@ -137,26 +146,36 @@ function welcomePartner(env, id) {
   return send(env, id,
     `Привет 💛\n\nЕсли ночью не спится и хочется, чтобы он был рядом, нажми «${BTN_WAKE}». ` +
     'У него громко зазвонит телефон, даже если он спит, и будет звонить, пока он не проснётся. ' +
-    'Я напишу тебе, когда он проснётся.\n\nМожно нажимать в любое время, он сам этого хотел.',
+    'Я напишу тебе, когда он проснётся.\n\n' +
+    `А если он не отвечает, а тебе что-то нужно, нажми «${BTN_URGENT}»: у него тоже громко зазвонит телефон.\n\n` +
+    'Можно нажимать в любое время, он сам этого хотел.',
     { reply_markup: PARTNER_KEYBOARD });
 }
 
 // ---------- alarm ----------
 
-async function wake(env, { owner, partner, origin, name }) {
+async function wake(env, { owner, partner, origin, name, urgent }) {
   const alarm = await getJson(env, 'alarm');
-  if (alarm && !alarm.test && now() - alarm.at < COOLDOWN_SEC) {
+  // A second press within a minute is ignored, unless it turns a sleepless alarm into an urgent one.
+  if (alarm && !alarm.test && now() - alarm.at < COOLDOWN_SEC && (alarm.urgent || !urgent)) {
     return send(env, partner, 'Уже бужу его, подожди немного 💛');
   }
   if (alarm) await cancelAlarm(env, alarm);
-  const r = await pushAlarm(env, origin, `🌙 ${name || 'Она'} не может уснуть`, 'Ей не спится, и она хочет, чтобы ты был рядом. Напиши ей 💛');
+  const who = name || 'Она';
+  const r = urgent
+    ? await pushAlarm(env, origin, `📣 ${who} зовёт тебя`, 'Ей что-то нужно, а ты не отвечаешь. Посмотри Telegram.')
+    : await pushAlarm(env, origin, `🌙 ${who} не может уснуть`, 'Ей не спится, и она хочет, чтобы ты был рядом. Напиши ей 💛');
   if (!r.ok) {
     await send(env, owner, `⚠️ Она нажала кнопку, но Pushover не сработал: ${esc(r.error)}`);
     return send(env, partner, 'Не получилось включить будильник 😔 Я написал ему в Telegram, но громко может не прозвенеть.');
   }
-  await putJson(env, 'alarm', { receipt: r.receipt, at: now() });
-  await send(env, owner, `🌙 ${esc(name || 'Она')} не может уснуть и хочет, чтобы ты был рядом.`);
-  return send(env, partner, 'Бужу его 💛 Напишу, как только он проснётся.', {
+  await putJson(env, 'alarm', { receipt: r.receipt, at: now(), urgent });
+  await send(env, owner, urgent
+    ? `📣 ${esc(who)} зовёт тебя: ей что-то нужно. Ответь ей.`
+    : `🌙 ${esc(who)} не может уснуть и хочет, чтобы ты был рядом.`);
+  return send(env, partner, urgent
+    ? 'Зову его 📣 Можешь написать сюда, что случилось, я сразу передам. Скажу, как только он увидит.'
+    : 'Бужу его 💛 Напишу, как только он проснётся.', {
     reply_markup: { inline_keyboard: [[{ text: BTN_CANCEL, callback_data: 'cancel' }]] },
   });
 }
@@ -180,7 +199,7 @@ async function onAcknowledged(env, receipt) {
   const owner = Number(await env.KV.get('owner')) || 0;
   if (alarm.test) return send(env, owner, '✅ Проверка прошла, всё работает.');
   const partner = Number(await env.KV.get('partner')) || 0;
-  await send(env, partner, 'Он проснулся 💛 Сейчас напишет.', { reply_markup: PARTNER_KEYBOARD });
+  await send(env, partner, alarm.urgent ? 'Он увидел 💛 Сейчас ответит.' : 'Он проснулся 💛 Сейчас напишет.', { reply_markup: PARTNER_KEYBOARD });
   await send(env, owner, 'Она знает, что ты проснулся. Напиши ей 💛');
 }
 
@@ -190,7 +209,9 @@ async function checkExpired(env) {
   await env.KV.delete('alarm');
   if (alarm.test) return;
   const partner = Number(await env.KV.get('partner')) || 0;
-  await send(env, partner, 'Будильник звонил 30 минут, но он, кажется, очень крепко спит 😔 Можно нажать ещё раз.', { reply_markup: PARTNER_KEYBOARD });
+  await send(env, partner, alarm.urgent
+    ? 'Телефон звонил ему 30 минут, но он не ответил 😔 Можно нажать ещё раз. Если что-то серьёзное, звони 112.'
+    : 'Будильник звонил 30 минут, но он, кажется, очень крепко спит 😔 Можно нажать ещё раз.', { reply_markup: PARTNER_KEYBOARD });
 }
 
 // ---------- Pushover ----------
