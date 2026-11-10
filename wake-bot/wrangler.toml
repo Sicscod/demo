@@ -6,6 +6,13 @@ compatibility_date = "2026-08-01"
 # Every 5 minutes: tell her if the alarm ran out without him waking up.
 crons = ["*/5 * * * *"]
 
+[vars]
+# His time zone (minutes from UTC) and the hours when the alarm rings loudly through silent mode.
+# Outside these hours she still reaches him, but as an ordinary notification (headphones / vibration).
+TZ_OFFSET_MIN = "480"
+NIGHT_FROM = "22"
+NIGHT_TO = "9"
+
 [[kv_namespaces]]
 binding = "KV"
-id = "00000000000000000000000000000000" # real id filled in by scripts/ensure-kv.sh
+id = "9896191b993f4a6eaa1a6ceb8de88976" # kept in sync by scripts/ensure-kv.sh

@@ -199,3 +199,29 @@ test('her text without an alarm is not forwarded', async () => {
   assert.deepEqual(t.sent(HIM), []);
   assert.deepEqual(t.pushes(), []);
 });
+
+test('in the daytime (his clock) she gets through with an ordinary notification, not a critical alarm', async () => {
+  mock.timers.setTime(Date.UTC(2026, 10, 10, 6, 40)); // 14:40 at UTC+8
+  const t = setup();
+  await t.pair();
+  await t.say(HER, '📣 Позвать');
+  const [p] = t.pushes();
+  assert.equal(p.priority, 0);
+  assert.equal(p.callback, undefined);
+  assert.match(t.sent(HIM)[0], /зовёт тебя/);
+  assert.match(t.sent(HER).at(-1), /Днём/);
+  await t.say(HER, 'ты где');
+  assert.match(t.sent(HIM).at(-1), /Она пишет: ты где/);
+  mock.timers.tick(31 * 60 * 1000);
+  await t.cron();
+  assert.doesNotMatch(t.sent(HER).at(-1), /30 минут/);
+});
+
+test('isNight follows the configured hours', async () => {
+  const { isNight } = await import('../src/worker.js');
+  const env = { TZ_OFFSET_MIN: '480', NIGHT_FROM: '22', NIGHT_TO: '9' };
+  assert.equal(isNight(env, Date.UTC(2026, 10, 9, 14, 0)), true); // 22:00
+  assert.equal(isNight(env, Date.UTC(2026, 10, 9, 0, 59)), true); // 08:59
+  assert.equal(isNight(env, Date.UTC(2026, 10, 9, 1, 0)), false); // 09:00
+  assert.equal(isNight(env, Date.UTC(2026, 10, 9, 13, 59)), false); // 21:59
+});

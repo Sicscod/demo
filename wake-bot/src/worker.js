@@ -162,6 +162,18 @@ async function wake(env, { owner, partner, origin, name, urgent }) {
   }
   if (alarm) await cancelAlarm(env, alarm);
   const who = name || 'Она';
+  // Critical Alerts always play from the phone's speaker, even with headphones on,
+  // so in the daytime he gets an ordinary notification instead.
+  if (!isNight(env)) {
+    const d = await pushNote(env, urgent ? `📣 ${who} зовёт тебя` : `🌙 ${who} хочет, чтобы ты был рядом`,
+      urgent ? 'Ей что-то нужно. Посмотри Telegram.' : 'Напиши ей 💛');
+    if (!d.ok) await send(env, owner, `⚠️ Pushover не сработал: ${esc(d.error)}`);
+    await putJson(env, 'alarm', { at: now(), urgent, day: true });
+    await send(env, owner, urgent
+      ? `📣 ${esc(who)} зовёт тебя: ей что-то нужно. Ответь ей.`
+      : `🌙 ${esc(who)} хочет, чтобы ты был рядом. Напиши ей 💛`);
+    return send(env, partner, 'Написал ему 💛 Днём телефон не звенит громко, но уведомление он увидит. Можешь написать сюда, что случилось, я сразу передам.', { reply_markup: PARTNER_KEYBOARD });
+  }
   const r = urgent
     ? await pushAlarm(env, origin, `📣 ${who} зовёт тебя`, 'Ей что-то нужно, а ты не отвечаешь. Посмотри Telegram.')
     : await pushAlarm(env, origin, `🌙 ${who} не может уснуть`, 'Ей не спится, и она хочет, чтобы ты был рядом. Напиши ей 💛');
@@ -185,7 +197,7 @@ async function handleCallback(cq, env) {
   const partner = Number(await env.KV.get('partner')) || 0;
   if (cq.data !== 'cancel' || cq.from.id !== partner) return;
   const alarm = await getJson(env, 'alarm');
-  if (!alarm || alarm.test) return send(env, partner, 'Будильник уже не звонит.');
+  if (!alarm || alarm.test || alarm.day) return send(env, partner, 'Будильник уже не звонит.');
   await cancelAlarm(env, alarm);
   const owner = Number(await env.KV.get('owner')) || 0;
   await send(env, owner, 'Она выключила будильник, уже не нужно.');
@@ -207,14 +219,33 @@ async function checkExpired(env) {
   const alarm = await getJson(env, 'alarm');
   if (!alarm || now() - alarm.at < EXPIRE_SEC) return;
   await env.KV.delete('alarm');
-  if (alarm.test) return;
+  if (alarm.test || alarm.day) return;
   const partner = Number(await env.KV.get('partner')) || 0;
   await send(env, partner, alarm.urgent
     ? 'Телефон звонил ему 30 минут, но он не ответил 😔 Можно нажать ещё раз. Если что-то серьёзное, звони 112.'
     : 'Будильник звонил 30 минут, но он, кажется, очень крепко спит 😔 Можно нажать ещё раз.', { reply_markup: PARTNER_KEYBOARD });
 }
 
+// Night by his clock: TZ_OFFSET_MIN from UTC, loud from NIGHT_FROM:00 until NIGHT_TO:00.
+export function isNight(env, t = Date.now()) {
+  const offset = Number(env.TZ_OFFSET_MIN ?? 480);
+  const from = Number(env.NIGHT_FROM ?? 22);
+  const to = Number(env.NIGHT_TO ?? 9);
+  const hour = Math.floor((((t / 60000 + offset) % 1440) + 1440) % 1440 / 60);
+  return from > to ? hour >= from || hour < to : hour >= from && hour < to;
+}
+
 // ---------- Pushover ----------
+
+async function pushNote(env, title, message) {
+  const res = await fetch('https://api.pushover.net/1/messages.json', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ token: env.PUSHOVER_TOKEN, user: env.PUSHOVER_USER, title, message, priority: 0 }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return data.status === 1 ? { ok: true } : { ok: false, error: (data.errors || [`HTTP ${res.status}`]).join(', ') };
+}
 
 async function pushAlarm(env, origin, title, message) {
   const res = await fetch('https://api.pushover.net/1/messages.json', {
@@ -239,6 +270,7 @@ async function pushAlarm(env, origin, title, message) {
 
 async function cancelAlarm(env, alarm) {
   await env.KV.delete('alarm');
+  if (!alarm.receipt) return;
   await fetch(`https://api.pushover.net/1/receipts/${alarm.receipt}/cancel.json`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
